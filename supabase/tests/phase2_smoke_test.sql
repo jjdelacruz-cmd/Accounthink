@@ -4,8 +4,28 @@
 create temp table if not exists smoke_results (n serial, test text, result text, detail text);
 truncate smoke_results;
 
+-- Test helpers (outside the test block so its error handler can still use them).
+create or replace function pg_temp.act_as(p_uid uuid) returns void language plpgsql as $f$
+begin
+  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claim.sub', p_uid::text, true);
+  perform set_config('role', 'authenticated', true);
+end $f$;
+
+create or replace function pg_temp.act_as_owner() returns void language plpgsql as $f$
+begin
+  perform set_config('role', 'none', true);
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('request.jwt.claim.sub', '', true);
+end $f$;
+
+create or replace function pg_temp.ok(p_test text, p_pass boolean, p_detail text default null) returns void language sql as $f$
+  insert into smoke_results (test, result, detail) values (p_test, case when p_pass then 'PASS' else 'FAIL' end, p_detail);
+$f$;
+
 do $test$
 declare
+  v_abort_ctx text;
   v_inst  uuid := gen_random_uuid();
   v_inst2 uuid := gen_random_uuid();
   v_s1    uuid := gen_random_uuid();
@@ -22,23 +42,6 @@ declare
   v_n int;
   v_txt text;
 begin
-  create or replace function pg_temp.act_as(p_uid uuid) returns void language plpgsql as $f$
-  begin
-    perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
-    perform set_config('request.jwt.claim.sub', p_uid::text, true);
-    perform set_config('role', 'authenticated', true);
-  end $f$;
-
-  create or replace function pg_temp.act_as_owner() returns void language plpgsql as $f$
-  begin
-    perform set_config('role', 'none', true);
-    perform set_config('request.jwt.claims', '', true);
-    perform set_config('request.jwt.claim.sub', '', true);
-  end $f$;
-
-  create or replace function pg_temp.ok(p_test text, p_pass boolean, p_detail text default null) returns void language sql as $f$
-    insert into smoke_results (test, result, detail) values (p_test, case when p_pass then 'PASS' else 'FAIL' end, p_detail);
-  $f$;
 
   -- Setup
   insert into auth.users (id, email, raw_user_meta_data) values
@@ -286,8 +289,10 @@ begin
 
   perform pg_temp.act_as_owner();
 exception when others then
+  get stacked diagnostics v_abort_ctx = pg_exception_context;
   perform pg_temp.act_as_owner();
-  insert into smoke_results (test, result, detail) values ('Test run aborted', 'FAIL', sqlerrm);
+  insert into smoke_results (test, result, detail)
+  values ('Test run aborted', 'FAIL', sqlerrm || ' | at: ' || left(v_abort_ctx, 300));
 end
 $test$;
 

@@ -8,9 +8,8 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), 
 - [x] **Phase 1** — Setup, email/password auth, roles (student / instructor / admin), courses, sections, join codes
 - [x] **Phase 2** — Item bank (MC / identification / enumeration), answer keys, exam builder
 - [x] **Phase 3** — Student exam flow: start, one question per screen, autosave, server timer, server-side grading
-- [ ] Phase 4 — Randomization
-- [ ] Phase 5 — Anti-cheating layers
-- [ ] Phase 6 — Live monitor
+- [x] **Phases 4–6** — Randomization, anti-cheating (sessions, device check, leave-app log, watermark,
+  copy/paste block, rotating access code, leave limit), live monitor with +time / end controls
 - [ ] Phase 7 — Results and item analysis
 - [ ] Phase 8 — Bulk import
 - [ ] Phase 9 — PWA polish and deploy
@@ -18,7 +17,7 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…`, `0002_…`, `0003_…`). Each is safe to re-run.
+   (`0001_…` through `0004_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
@@ -60,3 +59,6 @@ Security lives in the database (Row Level Security), not just the UI:
   `save_response` and `submit_attempt` check ownership, the exam window and the deadline;
   questions are served one at a time without keys, and grading runs only on the server.
 - Once any student starts an exam, its items can never change and it can't go back to draft.
+- Every student call carries a session token from `claim_attempt()`; opening the exam in another
+  tab or device takes over the session and is logged. Students can't read `integrity_events`
+  or the exam's `access_secret`.

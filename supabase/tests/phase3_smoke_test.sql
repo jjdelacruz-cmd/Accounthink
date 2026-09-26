@@ -1,12 +1,30 @@
--- Phase 3 smoke test. Paste into Supabase SQL Editor and Run (after migration 0003).
+-- Phase 3 smoke test. Paste into Supabase SQL Editor and Run (needs migrations up to 0004).
 -- Creates throwaway users/course/exam, takes the exam as students, checks grading
 -- and every "cannot" rule, then deletes everything it made.
 
 create temp table if not exists smoke_results (n serial, test text, result text, detail text);
 truncate smoke_results;
 
+-- Test helpers (outside the test block so its error handler can still use them).
+create or replace function pg_temp.act_as(p_uid uuid) returns void language plpgsql as $f$
+begin
+  perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claim.sub', p_uid::text, true);
+  perform set_config('role', 'authenticated', true);
+end $f$;
+create or replace function pg_temp.act_as_owner() returns void language plpgsql as $f$
+begin
+  perform set_config('role', 'none', true);
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('request.jwt.claim.sub', '', true);
+end $f$;
+create or replace function pg_temp.ok(p_test text, p_pass boolean, p_detail text default null) returns void language sql as $f$
+  insert into smoke_results (test, result, detail) values (p_test, case when p_pass then 'PASS' else 'FAIL' end, p_detail);
+$f$;
+
 do $test$
 declare
+  v_abort_ctx text;
   v_inst  uuid := gen_random_uuid();
   v_inst2 uuid := gen_random_uuid();
   v_s1    uuid := gen_random_uuid();
@@ -17,27 +35,13 @@ declare
   v_mcq uuid; v_ident uuid; v_enum uuid; v_enum_ord uuid;
   v_exam uuid; v_exam2 uuid;
   v_a1 uuid; v_a2 uuid; v_tmp uuid;
+  v_t1 uuid; v_t2 uuid; v_t3 uuid;
   v_q jsonb;
   v_r jsonb;
   v_n int;
   v_num numeric;
   v_txt text;
 begin
-  create or replace function pg_temp.act_as(p_uid uuid) returns void language plpgsql as $f$
-  begin
-    perform set_config('request.jwt.claims', json_build_object('sub', p_uid, 'role', 'authenticated')::text, true);
-    perform set_config('request.jwt.claim.sub', p_uid::text, true);
-    perform set_config('role', 'authenticated', true);
-  end $f$;
-  create or replace function pg_temp.act_as_owner() returns void language plpgsql as $f$
-  begin
-    perform set_config('role', 'none', true);
-    perform set_config('request.jwt.claims', '', true);
-    perform set_config('request.jwt.claim.sub', '', true);
-  end $f$;
-  create or replace function pg_temp.ok(p_test text, p_pass boolean, p_detail text default null) returns void language sql as $f$
-    insert into smoke_results (test, result, detail) values (p_test, case when p_pass then 'PASS' else 'FAIL' end, p_detail);
-  $f$;
 
   -- ---------- setup (as owner) ----------
   insert into auth.users (id, email, raw_user_meta_data) values
@@ -62,8 +66,8 @@ begin
     '{"answers":[["Cash","Cash on hand"],["Receivables","Accounts receivable"],["Inventory"]],"any_order":true}');
   v_enum_ord := public.save_item(jsonb_build_object('course_id', v_course, 'type', 'enumeration',
     'stem', 'Steps in order.', 'points', 2), '{"answers":[["Plan"],["Do"]],"any_order":false}');
-  insert into public.exams (course_id, title, time_limit_minutes, created_by, show_score)
-    values (v_course, 'Smoke Exam', 30, v_inst, true) returning id into v_exam;
+  insert into public.exams (course_id, title, time_limit_minutes, created_by, show_score, shuffle_items, shuffle_choices)
+    values (v_course, 'Smoke Exam', 30, v_inst, true, false, false) returning id into v_exam;
   insert into public.exam_items values (v_exam, v_mcq, 1), (v_exam, v_ident, 2), (v_exam, v_enum, 3), (v_exam, v_enum_ord, 4);
   insert into public.exam_sections values (v_exam, v_sec);
   perform pg_temp.act_as_owner();
@@ -110,6 +114,7 @@ begin
   perform pg_temp.act_as(v_s1);
   v_a1 := public.start_attempt(v_exam);
   v_tmp := public.start_attempt(v_exam);
+  v_t1 := (public.claim_attempt(v_a1, '{"hash":"phone-1","label":"Test phone"}') ->> 'token')::uuid;
   perform pg_temp.act_as_owner();
   perform pg_temp.ok('Student starts; starting again resumes the same attempt', v_a1 is not null and v_a1 = v_tmp);
 
@@ -118,7 +123,7 @@ begin
 
   -- ---------- questions never include keys ----------
   perform pg_temp.act_as(v_s1);
-  v_q := public.attempt_question(v_a1, 0);
+  v_q := public.attempt_question(v_a1, v_t1, 0);
   perform pg_temp.act_as_owner();
   perform pg_temp.ok('Question has only safe fields (no answer key)',
     (select array_agg(k order by k) from jsonb_object_keys(v_q) k)
@@ -126,7 +131,7 @@ begin
     (select string_agg(k, ',' order by k) from jsonb_object_keys(v_q) k));
 
   perform pg_temp.act_as(v_s1);
-  select string_agg(public.attempt_question(v_a1, i)::text, ' ') into v_txt from generate_series(0, 3) i;
+  select string_agg(public.attempt_question(v_a1, v_t1, i)::text, ' ') into v_txt from generate_series(0, 3) i;
   perform pg_temp.act_as_owner();
   perform pg_temp.ok('No question payload contains "correct"/"accepted"/answer text',
     v_txt not like '%correct%' and v_txt not like '%accepted%' and v_txt not ilike '%going concern%'
@@ -134,13 +139,13 @@ begin
     left(v_txt, 80));
 
   perform pg_temp.act_as(v_s1);
-  v_q := public.attempt_question(v_a1, 2);
+  v_q := public.attempt_question(v_a1, v_t1, 2);
   perform pg_temp.act_as_owner();
   perform pg_temp.ok('Enumeration tells the student how many answers to give', (v_q ->> 'slots')::int = 3, v_q ->> 'slots');
 
   begin
     perform pg_temp.act_as(v_s1);
-    v_q := public.attempt_question(v_a1, 4);
+    v_q := public.attempt_question(v_a1, v_t1, 4);
     perform pg_temp.act_as_owner();
     perform pg_temp.ok('Out-of-range question index rejected', false, 'returned');
   exception when others then
@@ -150,7 +155,7 @@ begin
   -- ---------- other people can't touch the attempt ----------
   begin
     perform pg_temp.act_as(v_s2);
-    v_q := public.attempt_question(v_a1, 0);
+    v_q := public.attempt_question(v_a1, v_t1, 0);
     perform pg_temp.act_as_owner();
     perform pg_temp.ok('Another student cannot read my questions', false, 'returned');
   exception when others then
@@ -158,7 +163,7 @@ begin
   end;
   begin
     perform pg_temp.act_as(v_s2);
-    perform public.save_response(v_a1, 0, '{"choice":"A"}');
+    perform public.save_response(v_a1, v_t1, 0, '{"choice":"A"}');
     perform pg_temp.act_as_owner();
     perform pg_temp.ok('Another student cannot answer for me', false, 'saved');
   exception when others then
@@ -167,12 +172,12 @@ begin
 
   -- ---------- answering (with variants that should still be correct) ----------
   perform pg_temp.act_as(v_s1);
-  perform public.save_response(v_a1, 0, '{"choice":"A"}');
-  perform public.save_response(v_a1, 0, '{"choice":"B","score":999}');           -- change answer; junk field
-  perform public.save_response(v_a1, 1, '{"text":"  going   CONCERN. "}');
-  perform public.save_response(v_a1, 2, '{"items":["receivables","Cash on hand","cash","Land"]}');
-  perform public.save_response(v_a1, 3, '{"items":["Do","Plan"]}');              -- wrong order
-  v_r := public.attempt_state(v_a1);
+  perform public.save_response(v_a1, v_t1, 0, '{"choice":"A"}');
+  perform public.save_response(v_a1, v_t1, 0, '{"choice":"B","score":999}');           -- change answer; junk field
+  perform public.save_response(v_a1, v_t1, 1, '{"text":"  going   CONCERN. "}');
+  perform public.save_response(v_a1, v_t1, 2, '{"items":["receivables","Cash on hand","cash","Land"]}');
+  perform public.save_response(v_a1, v_t1, 3, '{"items":["Do","Plan"]}');              -- wrong order
+  v_r := public.attempt_state(v_a1, v_t1);
   perform pg_temp.act_as_owner();
   perform pg_temp.ok('Progress shows 4 answered', jsonb_array_length(v_r -> 'answered') = 4, v_r ->> 'answered');
   select answer::text into v_txt from public.responses where attempt_id = v_a1 and item_id = v_mcq;
@@ -229,7 +234,7 @@ begin
 
   -- ---------- submit + grading ----------
   perform pg_temp.act_as(v_s1);
-  v_r := public.submit_attempt(v_a1);
+  v_r := public.submit_attempt(v_a1, v_t1);
   perform pg_temp.act_as_owner();
   -- mcq 1 + ident 2 + enum 2 of 3 (cash & cash-on-hand count once, Land wrong) + ordered enum 0 = 5 of 8
   perform pg_temp.ok('Score is correct (5 of 8)', (v_r ->> 'score')::numeric = 5 and (v_r ->> 'max_score')::numeric = 8,
@@ -243,7 +248,7 @@ begin
 
   begin
     perform pg_temp.act_as(v_s1);
-    perform public.save_response(v_a1, 0, '{"choice":"A"}');
+    perform public.save_response(v_a1, v_t1, 0, '{"choice":"A"}');
     perform pg_temp.act_as_owner();
     perform pg_temp.ok('Cannot change answers after submitting', false, 'saved');
   exception when others then
@@ -266,12 +271,13 @@ begin
   -- ---------- deadline enforcement (S2) ----------
   perform pg_temp.act_as(v_s2);
   v_a2 := public.start_attempt(v_exam);
-  perform public.save_response(v_a2, 0, '{"choice":"B"}');
+  v_t2 := (public.claim_attempt(v_a2, '{"hash":"phone-2","label":"Test phone 2"}') ->> 'token')::uuid;
+  perform public.save_response(v_a2, v_t2, 0, '{"choice":"B"}');
   perform pg_temp.act_as_owner();
   update public.attempts set started_at = now() - interval '31 minutes', deadline_at = now() - interval '1 minute' where id = v_a2;
   begin
     perform pg_temp.act_as(v_s2);
-    perform public.save_response(v_a2, 1, '{"text":"Going concern"}');
+    perform public.save_response(v_a2, v_t2, 1, '{"text":"Going concern"}');
     perform pg_temp.act_as_owner();
     perform pg_temp.ok('Answers after the deadline are rejected', false, 'saved');
   exception when others then
@@ -310,7 +316,8 @@ begin
   update public.exams set status = 'published' where id = v_exam2;
   perform pg_temp.act_as(v_s1);
   v_tmp := public.start_attempt(v_exam2);
-  perform public.save_response(v_tmp, 0, '{"choice":"B"}');
+  v_t3 := (public.claim_attempt(v_tmp, '{"hash":"phone-1","label":"Test phone"}') ->> 'token')::uuid;
+  perform public.save_response(v_tmp, v_t3, 0, '{"choice":"B"}');
   perform pg_temp.act_as_owner();
   update public.exams set status = 'closed' where id = v_exam2;
   perform pg_temp.act_as(v_inst);
@@ -321,8 +328,10 @@ begin
 
   perform pg_temp.act_as_owner();
 exception when others then
+  get stacked diagnostics v_abort_ctx = pg_exception_context;
   perform pg_temp.act_as_owner();
-  insert into smoke_results (test, result, detail) values ('Test run aborted', 'FAIL', sqlerrm);
+  insert into smoke_results (test, result, detail)
+  values ('Test run aborted', 'FAIL', sqlerrm || ' | at: ' || left(v_abort_ctx, 300));
 end
 $test$;
 

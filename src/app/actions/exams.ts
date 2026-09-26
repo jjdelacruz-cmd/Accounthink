@@ -47,6 +47,11 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
     return { error: "Time limit must be a whole number from 1 to 600 minutes." };
   }
   if (opensAt && closesAt && closesAt <= opensAt) return { error: "Closing time must be after opening time." };
+  const leaveLimitRaw = String(formData.get("leave_limit") ?? "").trim();
+  const leaveLimit = leaveLimitRaw ? Number(leaveLimitRaw) : null;
+  if (leaveLimit !== null && !(Number.isInteger(leaveLimit) && leaveLimit >= 1 && leaveLimit <= 50)) {
+    return { error: "Leave limit must be a whole number from 1 to 50, or blank for no limit." };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -61,6 +66,8 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
       shuffle_items: formData.get("shuffle_items") === "on",
       shuffle_choices: formData.get("shuffle_choices") === "on",
       show_score: formData.get("show_score") === "on",
+      require_access_code: formData.get("require_access_code") === "on",
+      leave_limit: leaveLimit,
     })
     .eq("id", examId);
   if (error) return { error: error.message };

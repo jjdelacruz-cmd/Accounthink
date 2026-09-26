@@ -29,6 +29,8 @@ type Exam = {
   shuffle_items: boolean;
   shuffle_choices: boolean;
   show_score: boolean;
+  require_access_code: boolean;
+  leave_limit: number | null;
 };
 
 type ExamItemRow = {
@@ -50,7 +52,7 @@ export default async function ExamBuilderPage({
   const { data: examData } = await supabase
     .from("exams")
     .select(
-      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score",
+      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score, require_access_code, leave_limit",
     )
     .eq("id", examId)
     .eq("course_id", courseId)
@@ -118,6 +120,15 @@ export default async function ExamBuilderPage({
         </div>
         <ExamStatusBadge status={exam.status} />
       </div>
+
+      {!isDraft && (
+        <Link
+          href={`/instructor/courses/${courseId}/exams/${examId}/monitor`}
+          className="block rounded-xl bg-slate-900 px-4 py-4 text-center text-lg font-semibold text-white"
+        >
+          Open live monitor →
+        </Link>
+      )}
 
       {/* Status */}
       <Card className="space-y-2">
@@ -236,6 +247,11 @@ export default async function ExamBuilderPage({
                 ["shuffle_items", "Shuffle question order per student", exam.shuffle_items],
                 ["shuffle_choices", "Shuffle multiple-choice options per student", exam.shuffle_choices],
                 ["show_score", "Show score to students after submitting", exam.show_score],
+                [
+                  "require_access_code",
+                  "Require the rotating access code to start (shown on the live monitor)",
+                  exam.require_access_code,
+                ],
               ] as const
             ).map(([name, text, on]) => (
               <label key={name} className="flex items-center gap-2 text-sm">
@@ -244,6 +260,15 @@ export default async function ExamBuilderPage({
               </label>
             ))}
           </fieldset>
+          <Field
+            label="Auto-submit after leaving the exam this many times (blank = never)"
+            name="leave_limit"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={50}
+            defaultValue={exam.leave_limit ?? ""}
+          />
         </ActionForm>
       </Card>
 
