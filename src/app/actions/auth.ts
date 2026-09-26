@@ -5,6 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { error?: string; message?: string } | undefined;
 
+// Auth errors with a status came from Supabase; anything else is a network failure.
+function authError(error: { message: string; status?: number }): FormState {
+  if (!error.status) return { error: "Can't reach the server. Check your internet and try again." };
+  return { error: error.message };
+}
+
 export async function login(_: FormState, formData: FormData): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -12,7 +18,7 @@ export async function login(_: FormState, formData: FormData): Promise<FormState
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
+  if (error) return authError(error);
 
   redirect("/");
 }
@@ -33,7 +39,7 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
     // Role is never taken from here; the DB trigger always creates a student.
     options: { data: { full_name: fullName, student_no: studentNo } },
   });
-  if (error) return { error: error.message };
+  if (error) return authError(error);
 
   // Email confirmation on: no session yet.
   if (!data.session) {
