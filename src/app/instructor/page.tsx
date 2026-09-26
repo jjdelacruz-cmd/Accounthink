@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createCourse, createSection, setJoinOpen } from "@/app/actions/instructor";
 import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
@@ -41,6 +42,21 @@ export default async function InstructorHome() {
           <div>
             <p className="text-sm font-semibold text-emerald-700">{course.code}</p>
             <h2 className="text-lg font-semibold">{course.title}</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href={`/instructor/courses/${course.id}/items`}
+              className="rounded-xl border border-slate-300 px-3 py-3 text-center text-sm font-semibold"
+            >
+              Item bank
+            </Link>
+            <Link
+              href={`/instructor/courses/${course.id}/exams`}
+              className="rounded-xl bg-emerald-700 px-3 py-3 text-center text-sm font-semibold text-white"
+            >
+              Exams
+            </Link>
           </div>
 
           {course.sections.length > 0 && (
