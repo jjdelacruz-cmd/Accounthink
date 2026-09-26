@@ -74,6 +74,12 @@ export default async function ExamBuilderPage({
       .eq("archived", false)
       .order("created_at", { ascending: false }),
   ]);
+  // Close out anyone whose time ran out so the counts are current.
+  if (!isDraft) await supabase.rpc("finalize_expired_for_exam", { p_exam_id: examId });
+  const { data: attemptRows } = await supabase.from("attempts").select("submitted_at").eq("exam_id", examId);
+  const started = attemptRows?.length ?? 0;
+  const submitted = attemptRows?.filter((a) => a.submitted_at).length ?? 0;
+
   const sections = sectionData ?? [];
   const assignedIds = new Set((assigned ?? []).map((r) => r.section_id as string));
   const examItems = (examItemData ?? []) as unknown as ExamItemRow[];
@@ -140,11 +146,19 @@ export default async function ExamBuilderPage({
                 <input type="hidden" name="status" value="published" />
               </ActionForm>
             )}
-            <ActionForm action={setExamStatus} submitLabel="Back to draft (edit items)" className="space-y-2">
-              {hidden}
-              <input type="hidden" name="status" value="draft" />
-            </ActionForm>
+            {started === 0 && (
+              <ActionForm action={setExamStatus} submitLabel="Back to draft (edit items)" className="space-y-2">
+                {hidden}
+                <input type="hidden" name="status" value="draft" />
+              </ActionForm>
+            )}
           </div>
+        )}
+        {!isDraft && (
+          <p className="text-sm text-slate-600">
+            <b>{started}</b> student{started === 1 ? "" : "s"} started · <b>{submitted}</b> submitted
+            {started > 0 && " · items are now locked for good"}
+          </p>
         )}
       </Card>
 

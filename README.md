@@ -7,7 +7,7 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), 
 
 - [x] **Phase 1** — Setup, email/password auth, roles (student / instructor / admin), courses, sections, join codes
 - [x] **Phase 2** — Item bank (MC / identification / enumeration), answer keys, exam builder
-- [ ] Phase 3 — Student exam flow
+- [x] **Phase 3** — Student exam flow: start, one question per screen, autosave, server timer, server-side grading
 - [ ] Phase 4 — Randomization
 - [ ] Phase 5 — Anti-cheating layers
 - [ ] Phase 6 — Live monitor
@@ -18,7 +18,7 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…`, `0002_…`). Each is safe to re-run.
+   (`0001_…`, `0002_…`, `0003_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
@@ -44,7 +44,7 @@ From then on, promote instructors from the **/admin** page.
 
 | Role | Home | Can do (Phase 1) |
 | --- | --- | --- |
-| Student | `/student` | Join a section with a 6-character code, see their classes |
+| Student | `/student` | Join a section with a code; take assigned exams once, with autosave and a server-side timer; see score if allowed |
 | Instructor | `/instructor` | Courses, sections, join codes; item bank; build, publish and close exams |
 | Admin | `/admin` | See all users, change roles |
 
@@ -56,3 +56,7 @@ Security lives in the database (Row Level Security), not just the UI:
   `items`, `item_keys` or `exam_items` at all; Phase 3 serves questions through server functions.
 - An exam's items are locked while it is published or closed (move it back to draft to edit).
 - An item used in a published exam can't be deleted; archive it instead.
+- Students never write attempts or responses directly. `start_attempt`, `attempt_question`,
+  `save_response` and `submit_attempt` check ownership, the exam window and the deadline;
+  questions are served one at a time without keys, and grading runs only on the server.
+- Once any student starts an exam, its items can never change and it can't go back to draft.

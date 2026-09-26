@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { joinSection } from "@/app/actions/student";
 import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
@@ -88,7 +89,8 @@ function ExamList({ exams }: { exams: StudentExam[] }) {
   return (
     <ul className="mt-3 space-y-2">
       {exams.map((e) => (
-        <li key={e.id} className="rounded-xl border border-slate-200 p-3">
+        <li key={e.id}>
+          <Link href={`/student/exams/${e.id}`} className="block rounded-xl border border-slate-200 p-3 hover:border-emerald-300">
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold">{e.title}</p>
             <span
@@ -104,6 +106,7 @@ function ExamList({ exams }: { exams: StudentExam[] }) {
             {e.opens_at ? ` · opens ${formatManila(e.opens_at)}` : ""}
             {e.closes_at ? ` · closes ${formatManila(e.closes_at)}` : ""}
           </p>
+          </Link>
         </li>
       ))}
     </ul>
