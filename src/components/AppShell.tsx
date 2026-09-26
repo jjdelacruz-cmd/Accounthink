@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Profile } from "@/lib/auth";
 
-const ROLE_LABEL = { student: "Student", instructor: "Instructor", admin: "Admin" } as const;
+const ROLE_LABEL = { student: "Student", instructor: "Instructor", admin: "Instructor · Admin" } as const;
 
 export function AppShell({ profile, children }: { profile: Profile; children: ReactNode }) {
   return (

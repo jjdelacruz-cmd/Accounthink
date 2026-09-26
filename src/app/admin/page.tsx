@@ -19,15 +19,13 @@ export default async function AdminHome() {
 
   return (
     <AppShell profile={me}>
-      <Link
-        href="/instructor"
-        className="block rounded-xl bg-emerald-700 px-4 py-3 text-center font-semibold text-white"
-      >
-        My courses &amp; exams →
+      <Link href="/instructor" className="text-sm font-medium text-emerald-700">
+        ← My courses
       </Link>
-      <h1 className="text-xl font-bold">Users</h1>
+      <h1 className="text-xl font-bold">Manage users</h1>
       <p className="text-sm text-slate-600">
-        Everyone signs up as a student. Promote instructors here.
+        Everyone signs up as a student. Make fellow teachers <b>instructor</b>; give <b>admin</b> only to
+        people who should also manage users.
       </p>
       <Card className="p-0">
         <ul className="divide-y divide-slate-100">

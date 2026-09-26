@@ -13,7 +13,7 @@ export type Profile = {
 export const HOME_FOR_ROLE: Record<Role, string> = {
   student: "/student",
   instructor: "/instructor",
-  admin: "/admin",
+  admin: "/instructor", // admins are instructors who can also manage users
 };
 
 /** Signed-in user's profile, or null. */
