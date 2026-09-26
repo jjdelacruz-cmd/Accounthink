@@ -1,4 +1,4 @@
-# OLFU CBA Online Exams
+# Accounthink
 
 Mobile-first quiz and exam platform for OLFU College of Business and Accountancy classes.
 Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), deployed on Netlify.

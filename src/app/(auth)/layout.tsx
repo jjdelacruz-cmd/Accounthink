@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
             Our Lady of Fatima University · CBA
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">Online Exams</h1>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">Accounthink</h1>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">{children}</div>
       </div>

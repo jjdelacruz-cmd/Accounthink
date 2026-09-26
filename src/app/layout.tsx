@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OLFU CBA Exams",
+  title: "Accounthink",
   description: "Quizzes and exams for OLFU College of Business and Accountancy classes",
 };
 

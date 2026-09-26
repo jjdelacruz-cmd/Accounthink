@@ -10,7 +10,7 @@ export function AppShell({ profile, children }: { profile: Profile; children: Re
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              OLFU CBA Exams · {ROLE_LABEL[profile.role]}
+              Accounthink · {ROLE_LABEL[profile.role]}
             </p>
             <p className="truncate font-semibold text-slate-900">
               {profile.full_name || "Unnamed user"}
