@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OLFU CBA Online Exams
 
-## Getting Started
+Mobile-first quiz and exam platform for OLFU College of Business and Accountancy classes.
+Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), deployed on Netlify.
 
-First, run the development server:
+## Status
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- [x] **Phase 1** — Setup, email/password auth, roles (student / instructor / admin), courses, sections, join codes
+- [ ] Phase 2 — Item bank and exam builder
+- [ ] Phase 3 — Student exam flow
+- [ ] Phase 4 — Randomization
+- [ ] Phase 5 — Anti-cheating layers
+- [ ] Phase 6 — Live monitor
+- [ ] Phase 7 — Results and item analysis
+- [ ] Phase 8 — Bulk import
+- [ ] Phase 9 — PWA polish and deploy
+
+## Setup
+
+1. **Supabase project** → SQL Editor → run `supabase/migrations/0001_phase1_auth_courses_sections.sql`.
+2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
+   publishable key (Supabase → Project Settings → API Keys).
+3. **Email confirmation link** (Supabase → Authentication → Email Templates → *Confirm signup*):
+   set the link to
+   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
+   and set **Site URL** (Authentication → URL Configuration) to your app URL
+   (`http://localhost:3000` while developing).
+4. `npm install && npm run dev`
+
+### Making the first admin
+
+Everyone signs up as a **student** — the role is never taken from the sign-up form.
+After signing up yourself, run this once in the SQL Editor:
+
+```sql
+update public.profiles set role = 'admin' where email = 'you@example.com';
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+From then on, promote instructors from the **/admin** page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How roles work
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role | Home | Can do (Phase 1) |
+| --- | --- | --- |
+| Student | `/student` | Join a section with a 6-character code, see their classes |
+| Instructor | `/instructor` | Create courses and sections, see join codes and student counts, open/close joining |
+| Admin | `/admin` | See all users, change roles |
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Security lives in the database (Row Level Security), not just the UI:
+- Only admins can change roles (enforced by a trigger).
+- Instructors see only their own courses, sections, and the students enrolled in them.
+- Students see only sections they joined, and can join only through `join_section()` with a valid, open code.
