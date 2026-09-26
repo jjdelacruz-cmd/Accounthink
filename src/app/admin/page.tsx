@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { setUserRole } from "@/app/actions/admin";
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui";
@@ -18,6 +19,12 @@ export default async function AdminHome() {
 
   return (
     <AppShell profile={me}>
+      <Link
+        href="/instructor"
+        className="block rounded-xl bg-emerald-700 px-4 py-3 text-center font-semibold text-white"
+      >
+        My courses &amp; exams →
+      </Link>
       <h1 className="text-xl font-bold">Users</h1>
       <p className="text-sm text-slate-600">
         Everyone signs up as a student. Promote instructors here.
