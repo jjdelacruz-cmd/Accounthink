@@ -122,12 +122,20 @@ export default async function ExamBuilderPage({
       </div>
 
       {!isDraft && (
-        <Link
-          href={`/instructor/courses/${courseId}/exams/${examId}/monitor`}
-          className="block rounded-xl bg-slate-900 px-4 py-4 text-center text-lg font-semibold text-white"
-        >
-          Open live monitor →
-        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            href={`/instructor/courses/${courseId}/exams/${examId}/monitor`}
+            className="rounded-xl bg-slate-900 px-4 py-4 text-center font-semibold text-white"
+          >
+            Live monitor
+          </Link>
+          <Link
+            href={`/instructor/courses/${courseId}/exams/${examId}/results`}
+            className="rounded-xl bg-emerald-700 px-4 py-4 text-center font-semibold text-white"
+          >
+            Results &amp; analysis
+          </Link>
+        </div>
       )}
 
       {/* Status */}

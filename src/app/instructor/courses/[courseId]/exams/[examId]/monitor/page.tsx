@@ -25,6 +25,12 @@ export default async function MonitorPage({
         ← {course.code} · {exam.title}
       </Link>
       <LiveMonitor examId={examId} />
+      <Link
+        href={`/instructor/courses/${courseId}/exams/${examId}/results`}
+        className="block rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold"
+      >
+        Results &amp; item analysis →
+      </Link>
     </AppShell>
   );
 }

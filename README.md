@@ -10,14 +10,14 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), 
 - [x] **Phase 3** — Student exam flow: start, one question per screen, autosave, server timer, server-side grading
 - [x] **Phases 4–6** — Randomization, anti-cheating (sessions, device check, leave-app log, watermark,
   copy/paste block, rotating access code, leave limit), live monitor with +time / end controls
-- [ ] Phase 7 — Results and item analysis
+- [x] **Phase 7** — Results: score table, class stats and distribution, per-student review, item analysis (% correct, discrimination, choice counts, common wrong answers), accept-answer and re-grade, passing mark, Excel export
 - [x] **Phase 8** — Bulk import: paste from Word (with ANSWER: lines or an ANSWER KEY list) or upload Excel/CSV, preview with problems and duplicates, all-or-nothing save
 - [ ] Phase 9 — PWA polish and deploy
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0005_…`). Each is safe to re-run.
+   (`0001_…` through `0006_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
