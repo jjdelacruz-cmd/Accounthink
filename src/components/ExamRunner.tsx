@@ -106,6 +106,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount: claims the session and loads the exam
     open(null);
   }, [open]);
 
@@ -466,6 +467,7 @@ function Runner({
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount/navigation: loads the current and next question
     load(index);
     load(index + 1);
   }, [index, load]);

@@ -1,7 +1,8 @@
 # Accounthink
 
 Mobile-first quiz and exam platform for OLFU College of Business and Accountancy classes.
-Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), deployed on Netlify.
+Next.js 16 (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), deployed on Netlify.
+Installable as an app (PWA) on Android and iPhone.
 
 ## Status
 
@@ -12,12 +13,13 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), 
   copy/paste block, rotating access code, leave limit), live monitor with +time / end controls
 - [x] **Phase 7** — Results: score table, class stats and distribution, per-student review, item analysis (% correct, discrimination, choice counts, common wrong answers), accept-answer and re-grade, passing mark, Excel export
 - [x] **Phase 8** — Bulk import: paste from Word (with ANSWER: lines or an ANSWER KEY list) or upload Excel/CSV, preview with problems and duplicates, all-or-nothing save
-- [ ] Phase 9 — PWA polish and deploy
+- [x] **Phase 9** — Installable app (manifest, icons, install prompt), offline page, loading/error screens
+- [x] **Password reset without email** — instructors reset students in their sections, admins anyone but admins; everyone can change their own password under Account
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0006_…`). Each is safe to re-run.
+   (`0001_…` through `0007_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
@@ -37,15 +39,25 @@ After signing up yourself, run this once in the SQL Editor:
 update public.profiles set role = 'admin' where email = 'you@example.com';
 ```
 
-From then on, promote instructors from the **/admin** page.
+From then on, promote instructors from **Manage users** (the `/admin` page).
+
+## Testing
+
+- **Database:** each `supabase/tests/*_smoke_test.sql` prints PASS/FAIL rows and cleans up after itself.
+- **End to end:** `scripts/e2e.mjs` drives the whole app (instructor + 3 students, phone-sized Chromium)
+  against a local Supabase (`npx supabase start` with these migrations) and a production build:
+  ```
+  BASE=http://localhost:3000 DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+  PLAYWRIGHT_PATH=/path/to/playwright/index.mjs node scripts/e2e.mjs
+  ```
 
 ## How roles work
 
-| Role | Home | Can do (Phase 1) |
+| Role | Home | Can do |
 | --- | --- | --- |
 | Student | `/student` | Join a section with a code; take assigned exams once, with autosave and a server-side timer; see score if allowed |
-| Instructor | `/instructor` | Courses, sections, join codes; item bank; build, publish and close exams |
-| Admin | `/admin` | See all users, change roles |
+| Instructor | `/instructor` | Courses, sections, students (reset passwords); item bank + bulk import; build, publish, monitor exams; results and item analysis |
+| Admin | `/instructor` + `/admin` | Everything an instructor can, plus Manage users (roles, password resets) |
 
 Security lives in the database (Row Level Security), not just the UI:
 - Only admins can change roles (enforced by a trigger).

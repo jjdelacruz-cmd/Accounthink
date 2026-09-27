@@ -48,6 +48,7 @@ function AccessCode({ examId }: { examId: string }) {
   }, [examId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount, then poll
     fetchCode();
     const t = setInterval(() => {
       setLeft((l) => {
@@ -293,6 +294,7 @@ export function LiveMonitor({ examId }: { examId: string }) {
   }, [examId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount, then poll
     refresh();
     const poll = setInterval(() => {
       if (document.visibilityState === "visible") refresh();

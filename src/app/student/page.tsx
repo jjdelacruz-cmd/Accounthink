@@ -2,6 +2,7 @@ import Link from "next/link";
 import { joinSection } from "@/app/actions/student";
 import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { Card, Field } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +48,7 @@ export default async function StudentHome() {
 
   return (
     <AppShell profile={profile}>
+      <InstallPrompt />
       <Card>
         <h2 className="mb-3 font-semibold">Join a class</h2>
         <ActionForm action={joinSection} submitLabel="Join" pendingLabel="Joining…">

@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, type FormEvent, type ReactNode } from "react";
+import { useActionState, useEffect, useRef, type ReactNode } from "react";
+import { useKeepFormValues } from "@/lib/useKeepFormValues";
 import type { FormState } from "@/app/actions/auth";
 import { Button, Notice } from "@/components/ui";
 
@@ -25,22 +26,21 @@ export function ActionForm({
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
   const formRef = useRef<HTMLFormElement>(null);
+  const { remember, restore } = useKeepFormValues(formRef);
 
+  // Success on a "create" form: clear it. Otherwise (errors, or settings forms):
+  // put back what the user submitted, since React resets the form after an action.
   useEffect(() => {
-    if (resetOnSuccess && state?.message) formRef.current?.reset();
+    if (!state) return;
+    if (resetOnSuccess && state.message) formRef.current?.reset();
+    else restore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, resetOnSuccess]);
 
-  // Submit manually instead of <form action>: React 19 auto-resets a form after an
-  // action, which would wipe the user's input when the server returns an error.
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
-    const data = new FormData(e.currentTarget, submitter);
-    startTransition(() => formAction(data));
-  };
-
   return (
-    <form ref={formRef} onSubmit={onSubmit} className={className}>
+    // Native action (not onSubmit + preventDefault) so the form still submits
+    // before the page has hydrated on a slow phone.
+    <form ref={formRef} action={formAction} onSubmit={remember} className={className}>
       {children}
       {state?.error && <Notice kind="error">{state.error}</Notice>}
       {state?.message && <Notice kind="ok">{state.message}</Notice>}
