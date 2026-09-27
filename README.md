@@ -11,13 +11,13 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase (Postgres + Auth + RLS), 
 - [x] **Phases 4–6** — Randomization, anti-cheating (sessions, device check, leave-app log, watermark,
   copy/paste block, rotating access code, leave limit), live monitor with +time / end controls
 - [ ] Phase 7 — Results and item analysis
-- [ ] Phase 8 — Bulk import
+- [x] **Phase 8** — Bulk import: paste from Word (with ANSWER: lines or an ANSWER KEY list) or upload Excel/CSV, preview with problems and duplicates, all-or-nothing save
 - [ ] Phase 9 — PWA polish and deploy
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0004_…`). Each is safe to re-run.
+   (`0001_…` through `0005_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).

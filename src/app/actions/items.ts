@@ -21,6 +21,31 @@ export async function saveItem(draft: ItemDraft): Promise<{ error?: string; id?:
   return { id: data as string };
 }
 
+/** Bulk import. Every item is re-validated here; the database saves all or nothing. */
+export async function importItems(
+  courseId: string,
+  drafts: ItemDraft[],
+): Promise<{ error?: string; count?: number }> {
+  await requireRole("instructor", "admin");
+  if (drafts.length === 0) return { error: "Nothing to import." };
+  if (drafts.length > 500) return { error: "Import at most 500 items at a time." };
+
+  const items = [];
+  for (let i = 0; i < drafts.length; i++) {
+    const result = validateItem({ ...drafts[i], id: undefined, course_id: courseId });
+    if ("error" in result) return { error: `Item ${i + 1}: ${result.error}` };
+    const { type, stem, choices, topic, difficulty, points, explanation, answer } = result.item;
+    items.push({ type, stem, choices, topic, difficulty, points, explanation, answer });
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("save_items", { p_course_id: courseId, p_items: items });
+  if (error) return { error: error.message };
+
+  revalidatePath(itemsPath(courseId));
+  return { count: data as number };
+}
+
 export async function setItemArchived(formData: FormData) {
   await requireRole("instructor", "admin");
   const id = String(formData.get("item_id"));

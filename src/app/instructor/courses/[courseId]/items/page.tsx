@@ -47,7 +47,14 @@ export default async function ItemBankPage({
   searchParams,
 }: {
   params: Promise<{ courseId: string }>;
-  searchParams: Promise<{ q?: string; type?: string; topic?: string; difficulty?: string; archived?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    type?: string;
+    topic?: string;
+    difficulty?: string;
+    archived?: string;
+    imported?: string;
+  }>;
 }) {
   const { courseId } = await params;
   const f = await searchParams;
@@ -75,12 +82,26 @@ export default async function ItemBankPage({
     <AppShell profile={profile}>
       <CourseNav course={course} active="items" />
 
-      <Link
-        href={`/instructor/courses/${courseId}/items/new`}
-        className="block rounded-xl bg-emerald-700 px-4 py-3 text-center font-semibold text-white"
-      >
-        + New item
-      </Link>
+      {f.imported && (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Imported {f.imported} question{f.imported === "1" ? "" : "s"}.
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href={`/instructor/courses/${courseId}/items/new`}
+          className="rounded-xl bg-emerald-700 px-4 py-3 text-center font-semibold text-white"
+        >
+          + New item
+        </Link>
+        <Link
+          href={`/instructor/courses/${courseId}/items/import`}
+          className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold"
+        >
+          ⬆ Import
+        </Link>
+      </div>
 
       <form className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <input
