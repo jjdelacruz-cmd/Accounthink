@@ -134,14 +134,24 @@ export default async function ExamBuilderPage({
       <Card className="space-y-2">
         {isDraft ? (
           <>
+            <p className="text-sm font-semibold">Ready to publish?</p>
+            <ul className="space-y-1 text-sm">
+              {(
+                [
+                  [!!exam.time_limit_minutes, "Time limit set"],
+                  [assignedIds.size > 0, "At least one section ticked and saved"],
+                  [examItems.length > 0, "At least one item added"],
+                ] as const
+              ).map(([ok, text]) => (
+                <li key={text} className={ok ? "text-emerald-800" : "text-slate-500"}>
+                  {ok ? "✓" : "○"} {text}
+                </li>
+              ))}
+            </ul>
             <p className="text-sm text-slate-600">
-              Publishing needs a time limit, at least one item, and at least one section. Items are locked while
-              published.
+              Set these in <b>Settings</b> and <b>Items</b> below, then tap <b>Save &amp; publish</b>. Items are
+              locked while published.
             </p>
-            <ActionForm action={setExamStatus} submitLabel="Publish exam" pendingLabel="Publishing…">
-              {hidden}
-              <input type="hidden" name="status" value="published" />
-            </ActionForm>
           </>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
@@ -176,7 +186,12 @@ export default async function ExamBuilderPage({
       {/* Settings */}
       <Card>
         <h2 className="mb-3 font-semibold">Settings</h2>
-        <ActionForm action={updateExamSettings} submitLabel="Save settings" resetOnSuccess={false}>
+        <ActionForm
+          action={updateExamSettings}
+          submitLabel="Save settings"
+          resetOnSuccess={false}
+          secondarySubmit={isDraft ? { label: "Save & publish", name: "intent", value: "publish" } : undefined}
+        >
           {hidden}
           <Field label="Title" name="title" defaultValue={exam.title} required />
           <div className="grid grid-cols-2 gap-3">

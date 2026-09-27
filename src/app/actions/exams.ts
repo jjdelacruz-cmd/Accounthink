@@ -94,6 +94,12 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
   }
 
   revalidatePath(examPath(courseId, examId));
+
+  if (formData.get("intent") === "publish") {
+    const { error: e } = await supabase.from("exams").update({ status: "published" }).eq("id", examId);
+    if (e) return { error: `Settings saved, but not published: ${e.message}` };
+    return { message: "Saved and published." };
+  }
   return { message: "Settings saved." };
 }
 
