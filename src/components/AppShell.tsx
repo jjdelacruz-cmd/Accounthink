@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Profile } from "@/lib/auth";
 
@@ -16,11 +17,16 @@ export function AppShell({ profile, children }: { profile: Profile; children: Re
               {profile.full_name || "Unnamed user"}
             </p>
           </div>
-          <form action="/auth/signout" method="post">
-            <button className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
-              Sign out
-            </button>
-          </form>
+          <div className="flex shrink-0 items-center">
+            <Link href="/account" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+              Account
+            </Link>
+            <form action="/auth/signout" method="post">
+              <button className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl space-y-4 px-4 py-4">{children}</main>

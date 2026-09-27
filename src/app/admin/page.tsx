@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { setUserRole } from "@/app/actions/admin";
 import { AppShell } from "@/components/AppShell";
+import { ResetPasswordButton } from "@/components/ResetPasswordButton";
 import { Card } from "@/components/ui";
 import { requireRole, type Profile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -41,6 +42,8 @@ export default async function AdminHome() {
               {u.id === me.id ? (
                 <span className="text-xs font-semibold text-slate-500">You (admin)</span>
               ) : (
+                <div className="flex flex-wrap items-start justify-end gap-2">
+                {u.role !== "admin" && <ResetPasswordButton userId={u.id} name={u.full_name || u.email || "this user"} />}
                 <form action={setUserRole} className="flex items-center gap-2">
                   <input type="hidden" name="user_id" value={u.id} />
                   <select
@@ -58,6 +61,7 @@ export default async function AdminHome() {
                     Save
                   </button>
                 </form>
+                </div>
               )}
             </li>
           ))}
