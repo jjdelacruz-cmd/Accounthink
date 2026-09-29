@@ -100,8 +100,10 @@ ANSWER: Going concern / Going concern assumption
 
 4. Give three current assets.
 ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
+  await T.page.getByPlaceholder("e.g. Chapter 3 quiz – Audit evidence").fill("Trial set");
   await T.page.getByRole("button", { name: "Import 4 questions" }).click();
-  await T.page.getByText("Imported 4 questions.").waitFor();
+  await T.page.getByText("Imported 4 questions as “Trial set”.").waitFor();
+  ok("Import is saved as a named upload and shown filtered", (await T.page.getByText("4 items in “Trial set”").count()) > 0);
   ok("Bulk import of 4 questions", true);
 
   // Exam
@@ -297,6 +299,49 @@ ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
   await login(L.page, A.email, "wrong-password");
   await L.page.getByText("Invalid login credentials").waitFor();
   ok("Wrong password keeps the email typed", (await L.page.getByLabel("Email", { exact: true }).inputValue()) === A.email);
+
+  // ---- Uploads + deleting questions
+  const bankUrl = examUrl.replace(/\/exams\/.*/, "/items");
+  await T.page.goto(bankUrl);
+  await T.page.locator("summary", { hasText: "Uploads" }).click();
+  ok("Uploads panel lists the upload with its count", (await T.page.getByText("4 questions · Pasted").count()) > 0);
+
+  // All 4 are in the published exam: deleting the upload must keep them.
+  T.page.once("dialog", (d) => d.accept());
+  await T.page.getByRole("button", { name: "Delete upload" }).first().click();
+  const keptMsg = await T.page.getByText(/Deleted 0 questions; kept 4 used in a published exam/).waitFor().then(() => true).catch(() => false);
+  ok("Questions used in a published exam are protected from deletion", keptMsg);
+
+  // A second upload, then delete one question, then select-and-delete, then the upload.
+  await T.page.getByRole("link", { name: "⬆ Import" }).click();
+  await T.page.locator("textarea").fill("1. Extra one?\nANSWER: a\n2. Extra two?\nANSWER: b\n3. Extra three?\nANSWER: c");
+  await T.page.getByPlaceholder("e.g. Chapter 3 quiz – Audit evidence").fill("Extra set");
+  await T.page.getByRole("button", { name: "Import 3 questions" }).click();
+  await T.page.getByText("Imported 3 questions as “Extra set”.").waitFor();
+
+  T.page.once("dialog", (d) => d.accept());
+  await T.page.locator("div.rounded-2xl", { hasText: "Extra one?" }).getByRole("button", { name: "Delete" }).click();
+  await T.page.getByText("Deleted 1 question.").waitFor();
+  ok("Delete a single question", await T.page.getByText("Extra one?").waitFor({ state: "detached" }).then(() => true).catch(() => false));
+
+  await T.page.getByLabel(/Select all shown/).check();
+  ok("Select all shows the bulk bar", (await T.page.getByText("2 selected").count()) > 0);
+  T.page.once("dialog", (d) => d.accept());
+  await T.page.locator("div.fixed").getByRole("button", { name: "Delete" }).click();
+  await T.page.getByText("Deleted 2 questions.").waitFor();
+  ok("Delete selected questions", await T.page.getByText(/Extra (two|three)\?/).first().waitFor({ state: "detached" }).then(() => true).catch(() => false));
+
+  // The now-empty upload can be deleted; the protected one stays.
+  await T.page.goto(bankUrl);
+  await T.page.locator("summary", { hasText: "Uploads" }).click();
+  T.page.once("dialog", (d) => d.accept());
+  await T.page.locator("li", { hasText: "Extra set" }).getByRole("button", { name: "Delete upload" }).click();
+  ok("Empty upload can be deleted", await T.page.getByText(/Deleted 0 questions and the upload/).waitFor().then(() => true).catch(() => false));
+  await T.page.goto(bankUrl);
+  await T.page.locator("summary", { hasText: "Uploads" }).click();
+  ok("Deleted upload is gone; protected one remains",
+    (await T.page.locator("li", { hasText: "Extra set" }).count()) === 0 &&
+    (await T.page.locator("li", { hasText: "Trial set" }).count()) === 1);
 
   // ---- PWA
   const manifest = await (await L.page.request.get(`${BASE}/manifest.webmanifest`)).json();

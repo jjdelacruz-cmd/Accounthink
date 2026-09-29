@@ -13,6 +13,8 @@ export type PickerItem = {
   topic: string | null;
   difficulty: Difficulty;
   points: number;
+  batch_id: string | null;
+  batch_label: string | null;
 };
 
 const sel = "rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm";
@@ -26,16 +28,27 @@ export function ExamItemPicker({ examId, courseId, items }: { examId: string; co
   const [type, setType] = useState("");
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("");
+  const [batch, setBatch] = useState("");
 
   const topics = useMemo(
     () => [...new Set(items.map((i) => i.topic).filter((t): t is string => !!t))].sort(),
     [items],
   );
+  const uploads = useMemo(() => {
+    const m = new Map<string, [string, string, number]>();
+    for (const i of items) {
+      if (!i.batch_id) continue;
+      const cur = m.get(i.batch_id);
+      m.set(i.batch_id, [i.batch_id, i.batch_label ?? "Upload", (cur?.[2] ?? 0) + 1]);
+    }
+    return [...m.values()];
+  }, [items]);
   const shown = items.filter(
     (i) =>
       (!type || i.type === type) &&
       (!topic || i.topic === topic) &&
       (!difficulty || i.difficulty === difficulty) &&
+      (!batch || (batch === "none" ? !i.batch_id : i.batch_id === batch)) &&
       (!q || i.stem.toLowerCase().includes(q.toLowerCase())),
   );
 
@@ -52,6 +65,17 @@ export function ExamItemPicker({ examId, courseId, items }: { examId: string; co
 
   return (
     <div className="space-y-3">
+      {uploads.length > 0 && (
+        <select value={batch} onChange={(e) => setBatch(e.target.value)} className={`${sel} w-full`} aria-label="Upload">
+          <option value="">All uploads</option>
+          {uploads.map(([id, label, n]) => (
+            <option key={id} value={id}>
+              ⬆ {label} ({n})
+            </option>
+          ))}
+          {items.some((i) => !i.batch_id) && <option value="none">Added individually / earlier imports</option>}
+        </select>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <input
           value={q}

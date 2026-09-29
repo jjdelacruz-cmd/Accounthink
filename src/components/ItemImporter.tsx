@@ -73,6 +73,7 @@ export function ItemImporter({
   const [fileName, setFileName] = useState<string>();
   const [fileError, setFileError] = useState<string>();
   const [topic, setTopic] = useState("");
+  const [label, setLabel] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty>("average");
   const [includeDuplicates, setIncludeDuplicates] = useState(false);
   const [showExample, setShowExample] = useState(false);
@@ -96,6 +97,8 @@ export function ItemImporter({
     setFileError(undefined);
     setFileRows(null);
     setFileName(file?.name);
+    // Suggest the file name as the upload name (without the extension).
+    if (file && !label.trim()) setLabel(file.name.replace(/\.[^.]+$/, ""));
     if (!file) return;
     try {
       if (/\.xlsx$/i.test(file.name)) {
@@ -129,9 +132,10 @@ export function ItemImporter({
     setError(undefined);
     const drafts = toImport.slice(0, MAX).map((p) => p.draft!);
     start(async () => {
-      const res = await importItems(courseId, drafts);
+      const source = mode === "text" ? "word" : "sheet";
+      const res = await importItems(courseId, drafts, label, source);
       if (res.error) setError(res.error);
-      else router.push(`/instructor/courses/${courseId}/items?imported=${res.count}`);
+      else router.push(`/instructor/courses/${courseId}/items?batch=${res.batchId}&imported=${res.count}`);
     });
   }
 
@@ -244,7 +248,19 @@ export function ItemImporter({
           </>
         )}
 
-        <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+        <label className="block border-t border-slate-100 pt-3">
+          <span className="mb-1 block text-xs font-medium text-slate-600">
+            Name this upload (to find or remove it later)
+          </span>
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            maxLength={120}
+            placeholder="e.g. Chapter 3 quiz – Audit evidence"
+            className={input}
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-slate-600">Topic if not given</span>
             <input value={topic} onChange={(e) => setTopic(e.target.value)} list="import-topics" className={input} />

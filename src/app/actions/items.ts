@@ -21,11 +21,13 @@ export async function saveItem(draft: ItemDraft): Promise<{ error?: string; id?:
   return { id: data as string };
 }
 
-/** Bulk import. Every item is re-validated here; the database saves all or nothing. */
+/** Bulk import as one named upload. Every item is re-validated here; the database saves all or nothing. */
 export async function importItems(
   courseId: string,
   drafts: ItemDraft[],
-): Promise<{ error?: string; count?: number }> {
+  label: string,
+  source: "word" | "sheet",
+): Promise<{ error?: string; count?: number; batchId?: string }> {
   await requireRole("instructor", "admin");
   if (drafts.length === 0) return { error: "Nothing to import." };
   if (drafts.length > 500) return { error: "Import at most 500 items at a time." };
@@ -39,22 +41,63 @@ export async function importItems(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("save_items", { p_course_id: courseId, p_items: items });
+  const { data, error } = await supabase.rpc("save_items", {
+    p_course_id: courseId,
+    p_items: items,
+    p_label: label.trim() || null,
+    p_source: source,
+  });
   if (error) return { error: error.message };
 
   revalidatePath(itemsPath(courseId));
-  return { count: data as number };
+  return { count: items.length, batchId: data as string };
 }
 
-export async function setItemArchived(formData: FormData) {
-  await requireRole("instructor", "admin");
-  const id = String(formData.get("item_id"));
-  const courseId = String(formData.get("course_id"));
-  const archived = formData.get("archived") === "true";
+export type DeleteResult = { error?: string; deleted?: number; kept?: number };
 
+/** Deletes questions; ones used in a published/closed exam are kept (see "kept"). */
+export async function deleteItems(courseId: string, itemIds: string[]): Promise<DeleteResult> {
+  await requireRole("instructor", "admin");
+  if (itemIds.length === 0) return { deleted: 0, kept: 0 };
   const supabase = await createClient();
-  await supabase.from("items").update({ archived }).eq("id", id);
+  const { data, error } = await supabase.rpc("delete_items", { p_item_ids: itemIds });
+  if (error) return { error: error.message };
   revalidatePath(itemsPath(courseId));
+  return data as DeleteResult;
+}
+
+/** Deletes an upload and its questions (except ones used in a published/closed exam). */
+export async function deleteBatch(courseId: string, batchId: string): Promise<DeleteResult> {
+  await requireRole("instructor", "admin");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_batch", { p_batch_id: batchId });
+  if (error) return { error: error.message };
+  revalidatePath(itemsPath(courseId));
+  return data as DeleteResult;
+}
+
+export async function setItemsArchived(
+  courseId: string,
+  itemIds: string[],
+  archived: boolean,
+): Promise<{ error?: string; count?: number }> {
+  await requireRole("instructor", "admin");
+  if (itemIds.length === 0) return { count: 0 };
+  const supabase = await createClient();
+  let count = 0;
+  // IDs go in the request URL, so send them in chunks to stay under URL length limits.
+  for (let i = 0; i < itemIds.length; i += 100) {
+    const { data, error } = await supabase
+      .from("items")
+      .update({ archived })
+      .eq("course_id", courseId)
+      .in("id", itemIds.slice(i, i + 100))
+      .select("id");
+    if (error) return { error: error.message };
+    count += data?.length ?? 0;
+  }
+  revalidatePath(itemsPath(courseId));
+  return { count };
 }
 
 export async function duplicateItem(itemId: string): Promise<{ error?: string; id?: string }> {

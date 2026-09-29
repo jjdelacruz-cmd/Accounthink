@@ -71,7 +71,7 @@ export default async function ExamBuilderPage({
       .order("position"),
     supabase
       .from("items")
-      .select("id, type, stem, topic, difficulty, points")
+      .select("id, type, stem, topic, difficulty, points, batch_id, item_batches(label)")
       .eq("course_id", courseId)
       .eq("archived", false)
       .order("created_at", { ascending: false }),
@@ -86,7 +86,11 @@ export default async function ExamBuilderPage({
   const assignedIds = new Set((assigned ?? []).map((r) => r.section_id as string));
   const examItems = (examItemData ?? []) as unknown as ExamItemRow[];
   const inExam = new Set(examItems.map((r) => r.items.id));
-  const bank = ((bankData ?? []) as PickerItem[]).filter((i) => !inExam.has(i.id));
+  const bank = (
+    (bankData ?? []) as unknown as (Omit<PickerItem, "batch_label"> & { item_batches: { label: string } | null })[]
+  )
+    .filter((i) => !inExam.has(i.id))
+    .map(({ item_batches, ...i }) => ({ ...i, batch_label: item_batches?.label ?? null }));
 
   const totalPoints = examItems.reduce((sum, r) => sum + Number(r.items.points), 0);
   const counts = examItems.reduce<Record<string, number>>((acc, r) => {

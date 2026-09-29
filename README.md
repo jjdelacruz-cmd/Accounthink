@@ -14,12 +14,13 @@ Installable as an app (PWA) on Android and iPhone.
 - [x] **Phase 7** — Results: score table, class stats and distribution, per-student review, item analysis (% correct, discrimination, choice counts, common wrong answers), accept-answer and re-grade, passing mark, Excel export
 - [x] **Phase 8** — Bulk import: paste from Word (with ANSWER: lines or an ANSWER KEY list) or upload Excel/CSV, preview with problems and duplicates, all-or-nothing save
 - [x] **Phase 9** — Installable app (manifest, icons, install prompt), offline page, loading/error screens
+- [x] **Uploads** — each import is a named upload; filter the bank and the exam picker by upload; delete single, selected, or a whole upload (questions in published exams are kept)
 - [x] **Password reset without email** — instructors reset students in their sections, admins anyone but admins; everyone can change their own password under Account
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0007_…`). Each is safe to re-run.
+   (`0001_…` through `0008_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
@@ -66,7 +67,8 @@ Security lives in the database (Row Level Security), not just the UI:
 - Answer keys live in `item_keys`, readable only by the course's instructor. Students cannot read
   `items`, `item_keys` or `exam_items` at all; Phase 3 serves questions through server functions.
 - An exam's items are locked while it is published or closed (move it back to draft to edit).
-- An item used in a published exam can't be deleted; archive it instead.
+- An item used in a published or closed exam can't be deleted (results depend on it); archive it instead.
+  `delete_items()` / `delete_batch()` skip such items and report how many were kept.
 - Students never write attempts or responses directly. `start_attempt`, `attempt_question`,
   `save_response` and `submit_attempt` check ownership, the exam window and the deadline;
   questions are served one at a time without keys, and grading runs only on the server.

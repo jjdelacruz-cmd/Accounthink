@@ -1,4 +1,4 @@
--- Phase 8 smoke test: bulk import. Paste into Supabase SQL Editor and Run (after 0005).
+-- Phase 8 smoke test: bulk import. Paste into Supabase SQL Editor and Run (needs migrations up to 0008).
 -- Creates throwaway data and deletes everything it made.
 
 create temp table if not exists smoke_results (n serial, test text, result text, detail text);
@@ -46,7 +46,7 @@ begin
   insert into public.courses (instructor_id, code, title) values (v_inst, 'SMK800', 'Smoke') returning id into v_course;
 
   perform pg_temp.act_as(v_inst);
-  v_n := public.save_items(v_course, v_good);
+  perform public.save_items(v_course, v_good, 'Smoke upload');
   perform pg_temp.act_as_owner();
   select count(*) into v_n from public.items i join public.item_keys k on k.item_id = i.id where i.course_id = v_course;
   perform pg_temp.ok('Instructor imports 3 items with answer keys', v_n = 3, v_n || ' items');
