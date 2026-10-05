@@ -202,6 +202,9 @@ ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
   await A.page.getByText("Submitted", { exact: true }).waitFor();
   const scoreA = await A.page.locator("p.text-5xl").innerText();
   ok("Student A: perfect score after grading variants (case, spaces, order)", /^6\s*\/\s*6$/.test(scoreA.replace(/\n/g, "")), scoreA.replace(/\n/g, " "));
+  ok("Feedback is held until the exam closes (default)",
+    (await A.page.getByText(/review your right and wrong answers here after the exam closes/).count()) > 0 &&
+    (await A.page.getByText("Your answers").count()) === 0);
 
   // ---- Student B: answer one wrong, then open on a second "device"
   await answerCurrent(B.page, false);
@@ -272,6 +275,37 @@ ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
   await T.page.getByText("Their answer:").first().waitFor();
   ok("Per-student review opens with answers and key", (await T.page.getByText("✓ 1/1").count()) >= 2);
   await T.page.screenshot({ path: `${SHOTS}/e2e-review.png`, fullPage: true });
+
+  // ---- Student feedback: release right after submitting, then check what students see
+  await T.page.goto(examUrl);
+  await T.page.getByLabel(/^Show the feedback/).selectOption("after_submit");
+  await T.page.getByRole("button", { name: "Save settings" }).click();
+  await T.page.getByText("Settings saved.").waitFor();
+  await A.page.reload();
+  await A.page.getByText("Your answers").waitFor();
+  ok("Student sees per-question feedback: all 4 right",
+    (await A.page.getByText("4 right").count()) > 0 && (await A.page.getByText(/✓ Correct/).count()) === 4);
+  await C.page.reload();
+  await C.page.getByText("Your answers").waitFor();
+  await C.page.getByRole("button", { name: /Mistakes only/ }).click();
+  ok("Student with mistakes sees wrong marks and the correct answers",
+    (await C.page.getByText(/✗ Wrong/).count()) > 0 &&
+    ((await C.page.getByText("correct answer", { exact: true }).count()) > 0 ||
+      (await C.page.getByText("Correct answer:").count()) > 0));
+  await C.page.screenshot({ path: `${SHOTS}/e2e-feedback.png`, fullPage: true });
+  await T.page.getByLabel(/^After submitting, students see/).selectOption("marks");
+  await T.page.getByRole("button", { name: "Save settings" }).click();
+  // "Settings saved." is still showing from the last save, so wait until students see the change.
+  for (let i = 0; i < 10; i++) {
+    await C.page.reload();
+    await C.page.getByText("Your answers").waitFor();
+    if (await C.page.getByText(/chose not to show the correct answers/).count()) break;
+    await C.page.waitForTimeout(1000);
+  }
+  ok("Right/wrong only: correct answers hidden",
+    (await C.page.getByText("Correct answer:").count()) === 0 &&
+    (await C.page.getByText("correct answer", { exact: true }).count()) === 0 &&
+    (await C.page.getByText(/chose not to show the correct answers/).count()) > 0);
 
   // ---- Password reset
   await T.page.goto(examUrl.replace(/\/exams\/.*/, "/students"));

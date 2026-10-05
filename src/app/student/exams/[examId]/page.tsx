@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { startExam } from "@/app/actions/attempts";
 import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
+import { ExamFeedback } from "@/components/ExamFeedback";
 import { Card } from "@/components/ui";
-import { END_REASON_LABEL, type StudentExamInfo } from "@/lib/attempts";
+import { END_REASON_LABEL, type ExamFeedback as Feedback, type StudentExamInfo } from "@/lib/attempts";
 import { requireRole } from "@/lib/auth";
 import { KIND_LABEL } from "@/lib/exams";
 import { createClient } from "@/lib/supabase/server";
@@ -20,6 +21,9 @@ export default async function StudentExamPage({ params }: { params: Promise<{ ex
   const attempt = exam.attempt;
   const submitted = !!attempt?.submitted_at;
   const inProgress = !!attempt && !submitted;
+  const feedback = submitted
+    ? ((await supabase.rpc("my_exam_feedback", { p_exam_id: examId })).data as Feedback | null)
+    : null;
 
   return (
     <AppShell profile={profile}>
@@ -55,7 +59,21 @@ export default async function StudentExamPage({ params }: { params: Promise<{ ex
             {formatManila(attempt!.submitted_at)}
           </p>
         </Card>
-      ) : (
+      ) : null}
+
+      {submitted && feedback?.status === "ready" && (
+        <ExamFeedback items={feedback.items} showAnswers={feedback.show_answers} />
+      )}
+      {submitted && feedback?.status === "after_close" && (
+        <Card>
+          <p className="text-center text-sm text-slate-600">
+            You can review your right and wrong answers here after the exam closes
+            {feedback.closes_at ? ` (${formatManila(feedback.closes_at)})` : ""}.
+          </p>
+        </Card>
+      )}
+
+      {submitted ? null : (
         <>
           <Card className="space-y-3">
             <dl className="grid grid-cols-2 gap-3 text-sm">

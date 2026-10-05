@@ -15,12 +15,13 @@ Installable as an app (PWA) on Android and iPhone.
 - [x] **Phase 8** — Bulk import: paste from Word (with ANSWER: lines or an ANSWER KEY list) or upload Excel/CSV, preview with problems and duplicates, all-or-nothing save
 - [x] **Phase 9** — Installable app (manifest, icons, install prompt), offline page, loading/error screens
 - [x] **Uploads** — each import is a named upload; filter the bank and the exam picker by upload; delete single, selected, or a whole upload (questions in published exams are kept)
+- [x] **Student feedback** — after submitting, students see each question marked right / wrong (and, if allowed, the correct answers), with a "Mistakes only" view; the instructor picks what they see and whether it shows right away or only after the exam closes
 - [x] **Password reset without email** — instructors reset students in their sections, admins anyone but admins; everyone can change their own password under Account
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0008_…`). Each is safe to re-run.
+   (`0001_…` through `0009_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
@@ -72,6 +73,8 @@ Security lives in the database (Row Level Security), not just the UI:
 - Students never write attempts or responses directly. `start_attempt`, `attempt_question`,
   `save_response` and `submit_attempt` check ownership, the exam window and the deadline;
   questions are served one at a time without keys, and grading runs only on the server.
+- Students get their own answers back only through `my_exam_feedback()`, and only after submitting.
+  Correct answers are included only if the exam's feedback setting allows it and it has been released.
 - Once any student starts an exam, its items can never change and it can't go back to draft.
 - Every student call carries a session token from `claim_attempt()`; opening the exam in another
   tab or device takes over the session and is logged. Students can't read `integrity_events`

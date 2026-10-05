@@ -75,3 +75,28 @@ export function isAnswered(a: StudentAnswer | null | undefined): boolean {
   if ("items" in a) return !!a.items?.some((x) => x.trim());
   return false;
 }
+
+export type FeedbackMode = "off" | "marks" | "answers";
+
+export const FEEDBACK_LABEL: Record<FeedbackMode, string> = {
+  off: "Score only (no feedback)",
+  marks: "Which questions they got right or wrong",
+  answers: "Right or wrong, plus the correct answers",
+};
+
+/** One question in a student's own feedback, from my_exam_feedback(). Keys only when show_answers. */
+export type FeedbackItem = {
+  index: number;
+  type: ItemType;
+  stem: string;
+  points: number;
+  points_awarded: number;
+  answer: StudentAnswer | null;
+  choices: { key: string; text: string; is_key: boolean | null }[] | null;
+  key: { accepted: string[] } | { answers: string[][]; any_order?: boolean } | null;
+};
+
+export type ExamFeedback =
+  | { status: "not_submitted" | "off" }
+  | { status: "after_close"; closes_at: string | null }
+  | { status: "ready"; show_answers: boolean; items: FeedbackItem[] };

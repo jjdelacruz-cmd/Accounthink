@@ -53,6 +53,9 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
     return { error: "Leave limit must be a whole number from 1 to 50, or blank for no limit." };
   }
 
+  const feedback = String(formData.get("feedback") ?? "answers");
+  if (!["off", "marks", "answers"].includes(feedback)) return { error: "Pick what students see after submitting." };
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("exams")
@@ -66,6 +69,8 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
       shuffle_items: formData.get("shuffle_items") === "on",
       shuffle_choices: formData.get("shuffle_choices") === "on",
       show_score: formData.get("show_score") === "on",
+      feedback,
+      feedback_after_close: formData.get("feedback_after_close") !== "after_submit",
       require_access_code: formData.get("require_access_code") === "on",
       leave_limit: leaveLimit,
     })

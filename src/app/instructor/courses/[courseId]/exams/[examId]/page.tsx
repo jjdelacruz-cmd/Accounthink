@@ -12,6 +12,7 @@ import { AppShell } from "@/components/AppShell";
 import { ExamItemPicker, type PickerItem } from "@/components/ExamItemPicker";
 import { ExamStatusBadge } from "@/components/ExamStatusBadge";
 import { Card, Field } from "@/components/ui";
+import { FEEDBACK_LABEL, type FeedbackMode } from "@/lib/attempts";
 import { getOwnedCourse } from "@/lib/courses";
 import { KIND_LABEL } from "@/lib/exams";
 import { DIFFICULTY_LABEL, ITEM_TYPE_LABEL, type Difficulty, type ItemType } from "@/lib/items";
@@ -29,6 +30,8 @@ type Exam = {
   shuffle_items: boolean;
   shuffle_choices: boolean;
   show_score: boolean;
+  feedback: FeedbackMode;
+  feedback_after_close: boolean;
   require_access_code: boolean;
   leave_limit: number | null;
 };
@@ -52,7 +55,7 @@ export default async function ExamBuilderPage({
   const { data: examData } = await supabase
     .from("exams")
     .select(
-      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score, require_access_code, leave_limit",
+      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score, feedback, feedback_after_close, require_access_code, leave_limit",
     )
     .eq("id", examId)
     .eq("course_id", courseId)
@@ -287,6 +290,33 @@ export default async function ExamBuilderPage({
               </label>
             ))}
           </fieldset>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className={labelCls}>After submitting, students see</span>
+              <select name="feedback" defaultValue={exam.feedback} className={inputCls}>
+                {(Object.keys(FEEDBACK_LABEL) as FeedbackMode[]).map((k) => (
+                  <option key={k} value={k}>
+                    {FEEDBACK_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className={labelCls}>Show the feedback</span>
+              <select
+                name="feedback_after_close"
+                defaultValue={exam.feedback_after_close ? "after_close" : "after_submit"}
+                className={inputCls}
+              >
+                <option value="after_close">After the exam closes (safer)</option>
+                <option value="after_submit">Right after each student submits</option>
+              </select>
+            </label>
+          </div>
+          <p className="-mt-1 text-xs text-slate-500">
+            &ldquo;After the exam closes&rdquo; stops students who finish early from passing answers to classmates
+            still taking it.
+          </p>
           <Field
             label="Auto-submit after leaving the exam this many times (blank = never)"
             name="leave_limit"
