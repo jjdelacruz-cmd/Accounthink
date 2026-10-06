@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { startExam } from "@/app/actions/attempts";
 import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
+import { CameraGate } from "@/components/CameraMonitor";
 import { ExamFeedback } from "@/components/ExamFeedback";
 import { Card } from "@/components/ui";
 import { END_REASON_LABEL, type ExamFeedback as Feedback, type StudentExamInfo } from "@/lib/attempts";
@@ -24,6 +25,28 @@ export default async function StudentExamPage({ params }: { params: Promise<{ ex
   const feedback = submitted
     ? ((await supabase.rpc("my_exam_feedback", { p_exam_id: examId })).data as Feedback | null)
     : null;
+
+  const startForm = (
+    <ActionForm action={startExam} submitLabel="Start exam" pendingLabel="Starting…" className="space-y-3">
+      <input type="hidden" name="exam_id" value={exam.id} />
+      {exam.require_access_code && (
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-slate-700">
+            Access code (shown by your instructor)
+          </span>
+          <input
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            placeholder="000000"
+            required
+            className="block w-full rounded-xl border-2 border-slate-300 px-3 py-3 text-center font-mono text-2xl tracking-[0.4em] outline-none focus:border-emerald-600"
+          />
+        </label>
+      )}
+    </ActionForm>
+  );
 
   return (
     <AppShell profile={profile}>
@@ -51,6 +74,12 @@ export default async function StudentExamPage({ params }: { params: Promise<{ ex
             </>
           ) : (
             <p className="text-slate-600">Your instructor will release the scores.</p>
+          )}
+          {attempt!.pending > 0 && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {attempt!.pending} answer{attempt!.pending === 1 ? " is" : "s are"} still being checked by your
+              instructor{attempt!.score !== null ? ", so this score may go up" : ""}.
+            </p>
           )}
           <p className="text-xs text-slate-500">
             {attempt!.end_reason && attempt!.end_reason !== "student"
@@ -123,6 +152,13 @@ export default async function StudentExamPage({ params }: { params: Promise<{ ex
               <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
                 <li>The timer starts when you tap Start and does not stop if you leave.</li>
                 <li>Your answers save automatically as you go.</li>
+                {exam.require_camera && (
+                  <li>
+                    <b>This exam uses your front camera</b> to check that you stay in front of the screen. It runs only
+                    on your phone: nothing is recorded or sent, only warnings (like looking away) are counted for your
+                    instructor. You must allow the camera to start.
+                  </li>
+                )}
                 <li>You can take this exam only once, on one device at a time.</li>
                 <li>
                   Leaving the exam screen (switching apps or tabs) is recorded
@@ -131,25 +167,7 @@ export default async function StudentExamPage({ params }: { params: Promise<{ ex
                     : " and shown to your instructor."}
                 </li>
               </ul>
-              <ActionForm action={startExam} submitLabel="Start exam" pendingLabel="Starting…" className="space-y-3">
-                <input type="hidden" name="exam_id" value={exam.id} />
-                {exam.require_access_code && (
-                  <label className="block">
-                    <span className="mb-1 block text-sm font-medium text-slate-700">
-                      Access code (shown by your instructor)
-                    </span>
-                    <input
-                      name="code"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                      placeholder="000000"
-                      required
-                      className="block w-full rounded-xl border-2 border-slate-300 px-3 py-3 text-center font-mono text-2xl tracking-[0.4em] outline-none focus:border-emerald-600"
-                    />
-                  </label>
-                )}
-              </ActionForm>
+              {exam.require_camera ? <CameraGate>{startForm}</CameraGate> : startForm}
             </Card>
           ) : (
             <Card>

@@ -44,3 +44,4 @@ next-env.d.ts
 
 # netlify local build output
 .netlify
+/public/mediapipe/wasm/

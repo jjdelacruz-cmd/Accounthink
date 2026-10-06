@@ -13,6 +13,10 @@ export type MonitorAttempt = {
   away_seconds: number;
   copy_paste: number;
   device_flags: number;
+  pending: number;
+  camera: number;
+  camera_seconds: number;
+  camera_kinds: Record<string, number>;
 };
 
 export type MonitorStudent = {
@@ -33,6 +37,7 @@ export type MonitorData = {
     total_items: number;
     require_access_code: boolean;
     leave_limit: number | null;
+    require_camera: boolean;
   };
   students: MonitorStudent[];
 };
@@ -55,6 +60,10 @@ export const EVENT_LABEL: Record<string, string> = {
   device_changed: "Switched to another device",
   session_takeover: "Opened in another tab/window",
   code_failed: "Wrong access code on another device",
+  cam_no_face: "Camera: face not seen",
+  cam_away: "Camera: looked away from the screen",
+  cam_multi: "Camera: another face seen",
+  cam_off: "Camera: turned off or blocked",
 };
 
 export type StudentStatus = "not_started" | "in_progress" | "submitted";

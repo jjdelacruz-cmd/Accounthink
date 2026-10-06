@@ -19,6 +19,7 @@ import {
   ITEM_TYPE_LABEL,
   type Difficulty,
   type EnumerationAnswer,
+  type EssayAnswer,
   type IdentificationAnswer,
   type ItemDraft,
   type McqAnswer,
@@ -50,6 +51,7 @@ function answerSummary(d: ItemDraft): string {
     return `${key}. ${d.choices?.find((c) => c.key === key)?.text ?? ""}`;
   }
   if (d.type === "identification") return (d.answer as IdentificationAnswer).accepted.join(" / ");
+  if (d.type === "essay") return (d.answer as EssayAnswer).guide ? `Guide: ${(d.answer as EssayAnswer).guide}` : "Checked by hand";
   const a = d.answer as EnumerationAnswer;
   return `${a.answers.map((alts) => alts.join(" / ")).join("; ")}${a.any_order ? "" : " (in order)"}`;
 }
@@ -179,6 +181,10 @@ export function ItemImporter({
                   <li>Choices (A–F) make it <b>multiple choice</b>. Answer with the letter, or put * before the correct choice.</li>
                   <li>No choices and one answer = <b>identification</b>. Separate accepted wordings with “/”.</li>
                   <li>Answers separated by “;” = <b>enumeration</b> (1 point each). Start with “IN ORDER:” if order matters.</li>
+                  <li>
+                    <b>Essay</b>: add a line <b>TYPE: Essay</b> (5 points unless you add POINTS:). An ANSWER: line is
+                    optional and becomes your guide for checking.
+                  </li>
                   <li>Optional lines: TOPIC:, DIFFICULTY: (Easy / Average / Difficult), POINTS:.</li>
                   <li>
                     Answer key at the end works too: a line <b>ANSWER KEY</b> then “1. B  2. C  3. Going concern”.

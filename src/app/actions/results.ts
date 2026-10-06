@@ -47,3 +47,31 @@ export async function setPassingPercent(_: FormState, formData: FormData): Promi
   revalidatePath(resultsPath(courseId, examId));
   return { message: value === null ? "Passing mark cleared." : `Passing mark set to ${value}%.` };
 }
+
+export type ScoreResult = { error?: string; score?: number; max_score?: number; pending?: number };
+
+/**
+ * Set a student's score for one identification / enumeration / essay answer by hand.
+ * points = null goes back to the automatic score (essays: back to "to check").
+ */
+export async function setResponseScore(
+  courseId: string,
+  examId: string,
+  attemptId: string,
+  itemId: string,
+  points: number | null,
+  comment: string,
+): Promise<ScoreResult> {
+  await requireRole("instructor", "admin");
+  if (points !== null && !Number.isFinite(points)) return { error: "Enter a number." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("set_response_score", {
+    p_attempt_id: attemptId,
+    p_item_id: itemId,
+    p_points: points,
+    p_comment: comment,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(resultsPath(courseId, examId));
+  return data as ScoreResult;
+}

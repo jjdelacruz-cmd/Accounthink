@@ -2,7 +2,7 @@
 // Deliberately minimal: it caches only static build files, icons and an offline
 // page. Pages, exam questions, answers and server actions always go to the
 // network, so nobody can ever see stale questions or submit from a cache.
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC_CACHE = `accounthink-static-${VERSION}`;
 const OFFLINE_URL = "/offline";
 
@@ -36,8 +36,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Hashed build assets and icons never change: cache-first.
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  // Hashed build assets, icons and the camera's face model never change: cache-first.
+  // (The model is ~7 MB; caching it means students download it only once.)
+  if (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/mediapipe/")
+  ) {
     event.respondWith(
       caches.match(req).then(
         (hit) =>

@@ -80,7 +80,8 @@ function buildDraft(
   if (["mcq", "mc", "multiple choice", "multiple-choice"].includes(hint)) type = "mcq";
   else if (["identification", "id", "ident", "fill in the blank"].includes(hint)) type = "identification";
   else if (["enumeration", "enum", "en"].includes(hint)) type = "enumeration";
-  else if (hint) return { error: `Unknown type "${p.typeHint}". Use MCQ, Identification or Enumeration.` };
+  else if (["essay", "es", "problem", "explain", "short answer"].includes(hint)) type = "essay";
+  else if (hint) return { error: `Unknown type "${p.typeHint}". Use MCQ, Identification, Enumeration or Essay.` };
   else if (choices.length > 0) type = "mcq";
   else if (answerText.includes(";")) type = "enumeration";
   else type = "identification";
@@ -89,7 +90,7 @@ function buildDraft(
   if (!difficulty) return { error: `Unknown difficulty "${p.difficulty}". Use Easy, Average or Difficult.` };
 
   const pointsText = (p.points ?? "").trim();
-  const points = pointsText ? Number(pointsText) : 1;
+  const points = pointsText ? Number(pointsText) : type === "essay" ? 5 : 1;
   if (pointsText && !(points > 0)) return { error: `Points "${p.points}" is not a positive number.` };
 
   let answer: Answer;
@@ -108,6 +109,9 @@ function buildDraft(
     }
     if (!correct) return { error: "No answer. Add ANSWER: B, or put * before the correct choice." };
     answer = { correct };
+  } else if (type === "essay") {
+    if (choices.length) return { error: "An essay can't have choices." };
+    answer = { guide: p.answer.trim() }; // optional: what a good answer covers
   } else if (type === "identification") {
     if (!answerText) return { error: "No answer. Add an ANSWER: line." };
     answer = { accepted: splitAlternates(answerText) };

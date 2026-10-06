@@ -33,6 +33,7 @@ type Exam = {
   feedback: FeedbackMode;
   feedback_after_close: boolean;
   require_access_code: boolean;
+  require_camera: boolean;
   leave_limit: number | null;
 };
 
@@ -55,7 +56,7 @@ export default async function ExamBuilderPage({
   const { data: examData } = await supabase
     .from("exams")
     .select(
-      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score, feedback, feedback_after_close, require_access_code, leave_limit",
+      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score, feedback, feedback_after_close, require_access_code, require_camera, leave_limit",
     )
     .eq("id", examId)
     .eq("course_id", courseId)
@@ -63,6 +64,11 @@ export default async function ExamBuilderPage({
   if (!examData) notFound();
   const exam = examData as Exam;
   const isDraft = exam.status === "draft";
+  const { data: checkData } = isDraft
+    ? { data: null }
+    : await supabase.rpc("exam_check_summary", { p_exam_id: examId });
+  const checkItems = (checkData ?? []) as { pending: number }[];
+  const toCheck = checkItems.reduce((n, c) => n + Number(c.pending), 0);
 
   const [{ data: sectionData }, { data: assigned }, { data: examItemData }, { data: bankData }] = await Promise.all([
     supabase.from("sections").select("id, name").eq("course_id", courseId).order("name"),
@@ -142,6 +148,16 @@ export default async function ExamBuilderPage({
           >
             Results &amp; analysis
           </Link>
+          {checkItems.length > 0 && (
+            <Link
+              href={`/instructor/courses/${courseId}/exams/${examId}/check`}
+              className={`col-span-2 rounded-xl border px-4 py-3 text-center font-semibold ${
+                toCheck > 0 ? "border-amber-300 bg-amber-50 text-amber-900" : "border-slate-300 bg-white"
+              }`}
+            >
+              Check answers{toCheck > 0 ? ` · ${toCheck} waiting` : " (identification, enumeration, essay)"}
+            </Link>
+          )}
         </div>
       )}
 
@@ -281,6 +297,11 @@ export default async function ExamBuilderPage({
                   "require_access_code",
                   "Require the rotating access code to start (shown on the live monitor)",
                   exam.require_access_code,
+                ],
+                [
+                  "require_camera",
+                  "Camera monitoring: warn students who look away or leave the camera (runs on their phone; nothing is recorded)",
+                  exam.require_camera,
                 ],
               ] as const
             ).map(([name, text, on]) => (

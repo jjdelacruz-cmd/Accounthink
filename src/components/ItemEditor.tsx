@@ -11,6 +11,7 @@ import {
   type Choice,
   type Difficulty,
   type EnumerationAnswer,
+  type EssayAnswer,
   type IdentificationAnswer,
   type ItemDraft,
   type ItemType,
@@ -57,6 +58,9 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
     initial?.type === "enumeration" ? (initial.answer as EnumerationAnswer).any_order : true,
   );
 
+  // Essay: optional guide for checking
+  const [guide, setGuide] = useState(initial?.type === "essay" ? (initial.answer as EssayAnswer).guide : "");
+
   function buildDraft(): ItemDraft {
     const base = {
       id: initial?.id,
@@ -71,6 +75,7 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
     if (type === "mcq") return { ...base, choices, answer: { correct } };
     if (type === "identification")
       return { ...base, choices: null, answer: { accepted: accepted.split("\n") } };
+    if (type === "essay") return { ...base, choices: null, answer: { guide } };
     return {
       ...base,
       choices: null,
@@ -95,6 +100,7 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
         setCorrect("");
         setAccepted("");
         setEnumRows(["", ""]);
+        setGuide("");
         setSaved(true);
         window.scrollTo({ top: 0, behavior: "smooth" });
         router.refresh();
@@ -110,12 +116,15 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
 
       <div>
         <span className={label}>Type</span>
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-200/70 p-1">
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-200/70 p-1 sm:grid-cols-4">
           {(Object.keys(ITEM_TYPE_LABEL) as ItemType[]).map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => setType(t)}
+              onClick={() => {
+                setType(t);
+                if (t === "essay" && points === "1") setPoints("5"); // essays are usually worth more
+              }}
               className={`rounded-lg px-2 py-2 text-sm font-semibold ${
                 type === t ? "bg-white text-emerald-800 shadow-sm" : "text-slate-600"
               }`}
@@ -240,6 +249,22 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
             Any order is correct
           </label>
         </fieldset>
+      )}
+
+      {type === "essay" && (
+        <label className="block">
+          <span className={label}>Guide for checking (optional, never shown during the exam)</span>
+          <textarea
+            value={guide}
+            onChange={(e) => setGuide(e.target.value)}
+            rows={3}
+            placeholder="What a full-credit answer should mention"
+            className={input}
+          />
+          <span className="mt-1 block text-xs text-slate-500">
+            Essays are checked by you after the exam (Exam → Check answers). Give the essay its points below.
+          </span>
+        </label>
       )}
 
       <div className="grid grid-cols-2 gap-3">

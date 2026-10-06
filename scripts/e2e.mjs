@@ -22,7 +22,10 @@ function ok(name, pass, detail = "") {
 }
 const sql = (q) => execFileSync("psql", [DB_URL, "-tAc", q], { encoding: "utf8" }).trim();
 
-const browser = await chromium.launch();
+// Fake camera (a test pattern with no face) so the camera check and warnings can run.
+const browser = await chromium.launch({
+  args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
+});
 const phone = devices["iPhone 13"];
 const newUser = async () => {
   const ctx = await browser.newContext({ ...phone, acceptDownloads: true });
@@ -376,6 +379,123 @@ ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
   ok("Deleted upload is gone; protected one remains",
     (await T.page.locator("li", { hasText: "Extra set" }).count()) === 0 &&
     (await T.page.locator("li", { hasText: "Trial set" }).count()) === 1);
+
+  // ---- Essays, camera monitoring and checking answers by hand
+  await T.page.goto(bankUrl);
+  await T.page.getByRole("link", { name: "⬆ Import" }).click();
+  await T.page.locator("textarea").fill(`1. Explain the going concern assumption.
+TYPE: Essay
+POINTS: 4
+ANSWER: The entity continues; assets at cost
+
+2. Define materiality in one word.
+ANSWER: Materiality`);
+  await T.page.getByPlaceholder("e.g. Chapter 3 quiz – Audit evidence").fill("Essay set");
+  await T.page.getByRole("button", { name: "Import 2 questions" }).click();
+  await T.page.getByText("Imported 2 questions as “Essay set”.").waitFor();
+  ok("Essay imported with TYPE: Essay", (await T.page.getByText("Checked by hand · guide: The entity continues").count()) > 0);
+
+  await T.page.goto(examUrl.replace(/\/exams\/.*/, "/exams"));
+  await T.page.getByLabel("Title", { exact: true }).fill("Essay Quiz");
+  await T.page.getByRole("button", { name: "Create exam" }).click();
+  await T.page.waitForURL(/\/exams\/[0-9a-f-]{36}$/);
+  const essayUrl = T.page.url();
+  await T.page.getByLabel("Upload", { exact: true }).selectOption({ label: "⬆ Essay set (2)" });
+  await T.page.getByRole("button", { name: "Select all shown" }).click();
+  await T.page.getByRole("button", { name: "Add 2 selected" }).click();
+  await T.page.getByText("Items in this exam").waitFor();
+  await T.page.getByText("Explain the going concern assumption.").first().waitFor();
+  await T.page.getByLabel("Time limit (minutes)", { exact: true }).fill("10");
+  await T.page.getByLabel("TEST-1", { exact: true }).check();
+  await T.page.getByLabel(/Camera monitoring/).check();
+  await T.page.getByLabel(/^Show the feedback/).selectOption("after_submit");
+  await T.page.getByRole("button", { name: "Save & publish" }).click();
+  await T.page.getByText("Saved and published.").waitFor();
+
+  const setCamera = async (on) => {
+    await T.page.goto(essayUrl);
+    await T.page.getByLabel(/Camera monitoring/).setChecked(on);
+    await T.page.getByRole("button", { name: "Save settings" }).click();
+    await T.page.getByText("Settings saved.").waitFor();
+  };
+
+  // Camera check before starting: the fake camera shows no face, so Start stays hidden.
+  await C.page.goto(`${BASE}/student`);
+  await C.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  ok("Students are told the exam uses the camera",
+    await C.page.getByText("This exam uses your front camera").waitFor().then(() => true).catch(() => false));
+  await C.page.getByRole("button", { name: "Turn on camera" }).click();
+  const camChecked = await C.page.getByText("We can't see your face").first()
+    .waitFor({ timeout: 60000 }).then(() => true).catch(() => false);
+  ok("Camera check runs the face model on the phone and needs a face", camChecked);
+  ok("Start stays hidden until the camera sees a face", (await C.page.getByRole("button", { name: "Start exam" }).count()) === 0);
+  await C.page.screenshot({ path: `${SHOTS}/e2e-camera-check.png`, fullPage: true });
+
+  // Start without the camera, then turn it on: the exam screen warns and logs it.
+  await setCamera(false);
+  await C.page.reload();
+  await C.page.getByRole("button", { name: "Start exam" }).click();
+  await C.page.getByText(/Question 1 of 2/).waitFor();
+  await setCamera(true);
+  await C.page.reload();
+  await C.page.getByText(/Question 1 of 2/).waitFor();
+  const warned = await C.page.getByRole("alert").filter({ hasText: "We can't see your face" })
+    .waitFor({ timeout: 60000 }).then(() => true).catch(() => false);
+  ok("Exam screen shows a camera warning when no face is seen", warned);
+  await C.page.screenshot({ path: `${SHOTS}/e2e-camera-warning.png` });
+  await C.page.waitForTimeout(6000); // event flush
+  const camEvents = Number(sql(`select count(*) from public.integrity_events e join public.attempts a on a.id = e.attempt_id
+    join public.exams x on x.id = a.exam_id where x.title = 'Essay Quiz' and e.kind = 'cam_no_face'`));
+  ok("Camera warning is logged for the instructor", camEvents >= 1, `${camEvents} events`);
+  await T.page.goto(`${essayUrl}/monitor`);
+  ok("Live monitor shows the camera flag",
+    await T.page.locator("li", { hasText: "Cruz, Ana" }).first().getByText(/Camera ×\d/).waitFor().then(() => true).catch(() => false));
+
+  // C answers: a written essay and a wrong-by-key identification.
+  for (let i = 0; i < 2; i++) {
+    if (await C.page.getByPlaceholder("Write your answer").count()) {
+      await C.page.getByPlaceholder("Write your answer").fill("The business is expected to keep operating, so assets are reported at cost.");
+    } else {
+      await C.page.getByPlaceholder("Type your answer").fill("materiality concept");
+    }
+    await C.page.waitForTimeout(900);
+    if (i < 1) await C.page.getByRole("button", { name: "Next →" }).click();
+  }
+  await C.page.getByRole("button", { name: "Submit", exact: true }).click();
+  await C.page.getByText("All questions answered.").waitFor();
+  await C.page.getByRole("button", { name: "Submit", exact: true }).last().click();
+  await C.page.getByText("Submitted", { exact: true }).waitFor();
+  ok("Student sees the essay is still being checked",
+    (await C.page.getByText(/1 answer is still being checked/).count()) > 0 && (await C.page.getByText("being checked").count()) > 0);
+
+  // Instructor checks by hand.
+  await T.page.goto(essayUrl);
+  await T.page.getByRole("link", { name: /Check answers · 1 waiting/ }).click();
+  await T.page.getByText("1 answer waiting to be checked.").waitFor();
+  ok("Check answers page opens on the essay waiting to be checked",
+    (await T.page.getByText("Your guide:").count()) > 0 && (await T.page.getByText("To check", { exact: true }).count()) > 0);
+  const row = T.page.locator("li", { hasText: "Cruz, Ana" }).first();
+  await row.getByLabel("Points").fill("3");
+  await row.getByRole("button", { name: "+ Add a comment for the student" }).click();
+  await row.getByPlaceholder(/Comment for the student/).fill("Good, also mention asset valuation.");
+  await row.getByRole("button", { name: "Save" }).click();
+  ok("Essay scored 3/4 by hand", await row.getByText("Saved ✓ · total 3/5").waitFor().then(() => true).catch(() => false));
+  await T.page.getByRole("link", { name: /Identification/ }).click();
+  const idRow = T.page.locator("li", { hasText: "Cruz, Ana" }).first();
+  await idRow.getByText("materiality concept").waitFor();
+  await idRow.getByRole("button", { name: "✓ 1" }).click();
+  // Full marks now, so it leaves the "Not full marks" list.
+  ok("Wrong-by-key identification accepted by hand",
+    await T.page.getByText("materiality concept").waitFor({ state: "detached" }).then(() => true).catch(() => false));
+
+  await C.page.reload();
+  await C.page.getByText("Your answers").waitFor();
+  const scoreC = (await C.page.locator("p.text-5xl").innerText()).replace(/\s/g, "");
+  ok("Student's score includes the hand-checked answers", scoreC === "4/5", scoreC);
+  ok("Student sees the instructor's comment",
+    (await C.page.getByText("Good, also mention asset valuation.").count()) > 0 &&
+    (await C.page.getByText(/still being checked/).count()) === 0);
+  await C.page.screenshot({ path: `${SHOTS}/e2e-essay-feedback.png`, fullPage: true });
 
   // ---- PWA
   const manifest = await (await L.page.request.get(`${BASE}/manifest.webmanifest`)).json();

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { ScoreEditor } from "@/components/ScoreEditor";
 import { Card } from "@/components/ui";
 import { END_REASON_LABEL } from "@/lib/attempts";
 import { getOwnedCourse } from "@/lib/courses";
@@ -33,15 +34,16 @@ function StudentAnswer({ it }: { it: ReviewItem }) {
       </ul>
     );
   }
-  const given = it.type === "identification" ? (a?.text?.trim() ? [a.text] : []) : (a?.items ?? []).filter((x) => x.trim());
+  const given = it.type === "enumeration" ? (a?.items ?? []).filter((x) => x.trim()) : a?.text?.trim() ? [a.text] : [];
   return (
     <div className="space-y-1 text-sm">
-      <p>
-        <span className="font-semibold">Their answer:</span>{" "}
+      <p className={it.type === "essay" ? "whitespace-pre-line" : ""}>
+        <span className="font-semibold">Their answer:</span>
+        {it.type === "essay" ? <br /> : " "}
         {given.length ? given.join("; ") : <span className="italic text-slate-500">blank</span>}
       </p>
       <p className="text-slate-600">
-        <span className="font-semibold">Key:</span> {keyText({ type: it.type, key: it.key, choices: it.choices })}
+        <span className="font-semibold">{it.type === "essay" ? "Guide:" : "Key:"}</span> {keyText({ type: it.type, key: it.key, choices: it.choices })}
       </p>
     </div>
   );
@@ -92,17 +94,24 @@ export default async function AttemptReviewPage({
         )}
       </Card>
       {!done && <p className="text-sm text-amber-800">Still in progress: answers so far, not graded yet.</p>}
+      {done && a.pending > 0 && (
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {a.pending} answer{a.pending === 1 ? "" : "s"} to check. Score each one below; the total updates as you go.
+        </p>
+      )}
 
       <ol className="space-y-2">
         {r.items.map((it) => {
-          const earned = it.points_awarded === null ? null : Number(it.points_awarded);
+          // No saved answer = 0; a saved answer with no points = waiting to be checked.
+          const earned = it.points_awarded === null ? (it.answer ? null : 0) : Number(it.points_awarded);
           const full = earned !== null && earned >= Number(it.points);
           const partial = earned !== null && earned > 0 && !full;
+          const toCheck = done && earned === null;
           return (
             <li
               key={it.item_id}
               className={`space-y-2 rounded-xl border bg-white p-3 ${
-                !done ? "border-slate-200" : full ? "border-emerald-200" : partial ? "border-amber-200" : "border-red-200"
+                !done || toCheck ? "border-slate-200" : full ? "border-emerald-200" : partial ? "border-amber-200" : "border-red-200"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -112,15 +121,35 @@ export default async function AttemptReviewPage({
                 {done && (
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
-                      full ? "bg-emerald-100 text-emerald-800" : partial ? "bg-amber-100 text-amber-900" : "bg-red-100 text-red-800"
+                      toCheck
+                        ? "bg-amber-100 text-amber-900"
+                        : full
+                          ? "bg-emerald-100 text-emerald-800"
+                          : partial
+                            ? "bg-amber-100 text-amber-900"
+                            : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {full ? "✓" : partial ? "½" : "✗"} {earned ?? 0}/{Number(it.points)}
+                    {toCheck ? `To check · ${Number(it.points)} pts` : `${full ? "✓" : partial ? "½" : "✗"} ${earned ?? 0}/${Number(it.points)}`}
+                    {it.manual && " · by you"}
                   </span>
                 )}
               </div>
               <p className="whitespace-pre-line">{it.stem}</p>
               <StudentAnswer it={it} />
+              {done && it.type !== "mcq" && (
+                <ScoreEditor
+                  courseId={courseId}
+                  examId={examId}
+                  attemptId={a.id}
+                  itemId={it.item_id}
+                  type={it.type}
+                  max={Number(it.points)}
+                  points={earned}
+                  manual={it.manual}
+                  comment={it.comment}
+                />
+              )}
             </li>
           );
         })}

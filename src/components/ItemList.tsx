@@ -13,6 +13,7 @@ import {
   type Choice,
   type Difficulty,
   type EnumerationAnswer,
+  type EssayAnswer,
   type IdentificationAnswer,
   type ItemType,
   type McqAnswer,
@@ -39,6 +40,7 @@ function answerPreview(r: ItemRow): string {
     return `${key}. ${r.choices?.find((c) => c.key === key)?.text ?? ""}`;
   }
   if (r.type === "identification") return (a as IdentificationAnswer).accepted.join(" / ");
+  if (r.type === "essay") return (a as EssayAnswer).guide ? `Checked by hand · guide: ${(a as EssayAnswer).guide}` : "Checked by hand";
   return (a as EnumerationAnswer).answers.map((alts) => alts[0]).join(", ");
 }
 

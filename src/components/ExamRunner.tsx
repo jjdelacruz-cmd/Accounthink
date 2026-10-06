@@ -10,6 +10,7 @@ import {
   saveAnswer,
   submitAttempt,
 } from "@/app/actions/attempts";
+import { CameraWatch } from "@/components/CameraMonitor";
 import { Watermark } from "@/components/Watermark";
 import {
   isAnswered,
@@ -532,6 +533,15 @@ function Runner({
   return (
     <div className="min-h-dvh select-none bg-slate-50 pb-28 [-webkit-touch-callout:none]">
       <Watermark text={watermark} />
+      {state.require_camera && (
+        <CameraWatch
+          finishedRef={finished}
+          onEpisode={(kind, seconds) => {
+            record({ kind, detail: seconds === null ? { phase: "start" } : { phase: "end", seconds } });
+            flushEvents();
+          }}
+        />
+      )}
 
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-2">
@@ -639,6 +649,26 @@ function Runner({
                 maxLength={500}
                 className="block w-full select-text rounded-xl border-2 border-slate-300 px-3 py-3 text-lg outline-none focus:border-emerald-600"
               />
+            )}
+
+            {q.type === "essay" && (
+              <div className="space-y-1">
+                <textarea
+                  value={answer && "text" in answer ? (answer.text ?? "") : ""}
+                  onChange={(e) => setAnswer(index, { text: e.target.value }, true)}
+                  onBlur={() => flush()}
+                  placeholder="Write your answer"
+                  rows={8}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={10000}
+                  className="block w-full select-text rounded-xl border-2 border-slate-300 px-3 py-3 text-base leading-relaxed outline-none focus:border-emerald-600"
+                />
+                <p className="text-right text-xs text-slate-500">
+                  {(answer && "text" in answer ? (answer.text ?? "") : "").length} / 10,000 · checked by your instructor
+                </p>
+              </div>
             )}
 
             {q.type === "enumeration" && (

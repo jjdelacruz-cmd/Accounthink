@@ -72,6 +72,7 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
       feedback,
       feedback_after_close: formData.get("feedback_after_close") !== "after_submit",
       require_access_code: formData.get("require_access_code") === "on",
+      require_camera: formData.get("require_camera") === "on",
       leave_limit: leaveLimit,
     })
     .eq("id", examId);

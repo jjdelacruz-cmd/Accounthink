@@ -256,6 +256,7 @@ export function ResultsView({
 
   const students = monitor.students;
   const stats = scoreStats(students, passingPercent);
+  const toCheck = students.reduce((n, s) => n + Number(s.attempt?.pending ?? 0), 0);
 
   const rows = useMemo(() => {
     const score = (s: MonitorStudent) =>
@@ -320,6 +321,16 @@ export function ResultsView({
         <p className="text-xs font-semibold uppercase text-slate-500">Results</p>
         <h1 className="text-xl font-bold">{examTitle}</h1>
       </div>
+
+      {toCheck > 0 && (
+        <Link
+          href={`/instructor/courses/${courseId}/exams/${examId}/check`}
+          className="block rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          <b>{toCheck} answer{toCheck === 1 ? "" : "s"} waiting to be checked</b> (essays, or answers you set aside).
+          Scores below don&apos;t include them yet. <span className="font-semibold underline">Check answers →</span>
+        </Link>
+      )}
 
       {stats ? (
         <>

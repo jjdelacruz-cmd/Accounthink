@@ -16,12 +16,14 @@ Installable as an app (PWA) on Android and iPhone.
 - [x] **Phase 9** — Installable app (manifest, icons, install prompt), offline page, loading/error screens
 - [x] **Uploads** — each import is a named upload; filter the bank and the exam picker by upload; delete single, selected, or a whole upload (questions in published exams are kept)
 - [x] **Student feedback** — after submitting, students see each question marked right / wrong (and, if allowed, the correct answers), with a "Mistakes only" view; the instructor picks what they see and whether it shows right away or only after the exam closes
+- [x] **Essays + checking by hand** — essay questions (TYPE: Essay in imports) wait for the instructor; on *Check answers* the instructor scores essays and can override any identification / enumeration answer, with a comment for the student. Hand scores survive re-grading
+- [x] **Camera monitoring** (optional per exam) — the phone's front camera checks for a face, looking away, or a second face, warns the student on screen and logs warnings for the live monitor. Runs fully on the phone (MediaPipe face model, self-hosted); no picture is stored or sent
 - [x] **Password reset without email** — instructors reset students in their sections, admins anyone but admins; everyone can change their own password under Account
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0009_…`). Each is safe to re-run.
+   (`0001_…` through `0010_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).

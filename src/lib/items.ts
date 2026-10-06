@@ -1,10 +1,11 @@
-export type ItemType = "mcq" | "identification" | "enumeration";
+export type ItemType = "mcq" | "identification" | "enumeration" | "essay";
 export type Difficulty = "easy" | "average" | "difficult";
 
 export const ITEM_TYPE_LABEL: Record<ItemType, string> = {
   mcq: "Multiple choice",
   identification: "Identification",
   enumeration: "Enumeration",
+  essay: "Essay",
 };
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
   easy: "Easy",
@@ -17,7 +18,12 @@ export type Choice = { key: string; text: string };
 export type McqAnswer = { correct: string };
 export type IdentificationAnswer = { accepted: string[] };
 export type EnumerationAnswer = { answers: string[][]; any_order: boolean };
-export type Answer = McqAnswer | IdentificationAnswer | EnumerationAnswer;
+/** Essays are checked by hand; the guide (what a good answer covers) is only for the instructor. */
+export type EssayAnswer = { guide: string };
+export type Answer = McqAnswer | IdentificationAnswer | EnumerationAnswer | EssayAnswer;
+
+/** Types the instructor can score by hand (multiple choice always follows the key). */
+export const CHECKABLE_TYPES: ItemType[] = ["identification", "enumeration", "essay"];
 
 /** What the item editor submits. */
 export type ItemDraft = {
@@ -107,6 +113,13 @@ export function validateItem(d: ItemDraft): { error: string } | { item: ItemDraf
           choices: null,
           answer: { answers, any_order: a.any_order !== false },
         },
+      };
+    }
+    case "essay": {
+      const points = Number(d.points);
+      if (!(points > 0)) return { error: "Points must be more than 0." };
+      return {
+        item: { ...base, points, choices: null, answer: { guide: ((d.answer as EssayAnswer).guide ?? "").trim() } },
       };
     }
     default:

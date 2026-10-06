@@ -167,6 +167,7 @@ function StudentRow({
           {status === "submitted" && a && (
             <span className="text-sm font-bold">
               {Number(a.score)} / {Number(a.max_score)}
+              {a.pending > 0 && <span className="block text-xs font-semibold text-amber-700">{a.pending} to check</span>}
             </span>
           )}
         </div>
@@ -192,6 +193,17 @@ function StudentRow({
             {a.copy_paste > 0 && (
               <span className="rounded-md bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-900">
                 Copy/paste ×{a.copy_paste}
+              </span>
+            )}
+            {a.camera > 0 && (
+              <span
+                className="rounded-md bg-red-100 px-1.5 py-0.5 font-semibold text-red-800"
+                title={Object.entries(a.camera_kinds ?? {})
+                  .map(([k, n]) => `${EVENT_LABEL[k] ?? k} ×${n}`)
+                  .join(", ")}
+              >
+                Camera ×{a.camera}
+                {a.camera_seconds > 0 && ` · ${formatDuration(a.camera_seconds)}`}
               </span>
             )}
             {a.device_flags > 0 && (
@@ -254,6 +266,9 @@ function StudentRow({
                       ? ` (away ${formatDuration(e.detail.away_seconds)})`
                       : ""}
                     {e.kind === "device_changed" && e.detail?.to ? `: ${String(e.detail.to)}` : ""}
+                    {e.kind.startsWith("cam_") && typeof e.detail?.seconds === "number"
+                      ? ` (ended after ${formatDuration(e.detail.seconds)})`
+                      : ""}
                   </span>
                 </li>
               ))}

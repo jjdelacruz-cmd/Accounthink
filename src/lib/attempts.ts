@@ -24,6 +24,7 @@ export type AttemptState = {
   answered: number[];
   leave_count: number;
   leave_limit: number | null;
+  require_camera: boolean;
   student_name: string;
   student_no: string | null;
 };
@@ -31,7 +32,18 @@ export type AttemptState = {
 export type DeviceInfo = { hash: string; label: string };
 
 export type IntegrityEvent = {
-  kind: "left_app" | "returned" | "copy" | "cut" | "paste" | "context_menu" | "print_key";
+  kind:
+    | "left_app"
+    | "returned"
+    | "copy"
+    | "cut"
+    | "paste"
+    | "context_menu"
+    | "print_key"
+    | "cam_no_face"
+    | "cam_away"
+    | "cam_multi"
+    | "cam_off";
   detail?: Record<string, unknown>;
 };
 
@@ -54,6 +66,7 @@ export type StudentExamInfo = {
   status: "published" | "closed";
   item_count: number;
   require_access_code: boolean;
+  require_camera: boolean;
   leave_limit: number | null;
   is_open: boolean;
   server_now: string;
@@ -65,6 +78,7 @@ export type StudentExamInfo = {
     end_reason: string | null;
     score: number | null;
     max_score: number | null;
+    pending: number;
   } | null;
 };
 
@@ -90,10 +104,12 @@ export type FeedbackItem = {
   type: ItemType;
   stem: string;
   points: number;
-  points_awarded: number;
+  /** null = still being checked by the instructor */
+  points_awarded: number | null;
   answer: StudentAnswer | null;
+  comment: string | null;
   choices: { key: string; text: string; is_key: boolean | null }[] | null;
-  key: { accepted: string[] } | { answers: string[][]; any_order?: boolean } | null;
+  key: { accepted: string[] } | { answers: string[][]; any_order?: boolean } | { guide: string } | null;
 };
 
 export type ExamFeedback =

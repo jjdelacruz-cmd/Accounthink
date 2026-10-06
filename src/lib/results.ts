@@ -1,4 +1,4 @@
-import type { Answer, Choice, ItemType } from "@/lib/items";
+import { ITEM_TYPE_LABEL, type Answer, type Choice, type ItemType } from "@/lib/items";
 import type { MonitorStudent } from "@/lib/monitor";
 
 export type AnalysisItem = {
@@ -29,6 +29,8 @@ export type ReviewItem = {
   key: Answer | null;
   answer: { choice?: string; text?: string; items?: string[] } | null;
   points_awarded: number | null;
+  manual: boolean;
+  comment: string | null;
 };
 
 export type AttemptReview = {
@@ -40,6 +42,7 @@ export type AttemptReview = {
     end_reason: string | null;
     score: number | null;
     max_score: number | null;
+    pending: number;
     device: string | null;
   };
   student: { full_name: string; student_no: string | null; email: string | null };
@@ -139,6 +142,7 @@ export function keyText(it: { type: ItemType; key: Answer | null; choices: Choic
   if (!k) return "—";
   if ("correct" in k) return `${k.correct}. ${it.choices?.find((c) => c.key === k.correct)?.text ?? ""}`;
   if ("accepted" in k) return k.accepted.join(" / ");
+  if ("guide" in k) return k.guide ? `Guide: ${k.guide}` : "Checked by hand";
   return `${k.answers.map((a) => a.join(" / ")).join("; ")}${k.any_order ? "" : " (in order)"}`;
 }
 
@@ -211,7 +215,7 @@ export function buildWorkbook(
     itemRows.push([
       num(i + 1),
       str(it.stem),
-      str(it.type === "mcq" ? "Multiple choice" : it.type === "identification" ? "Identification" : "Enumeration"),
+      str(ITEM_TYPE_LABEL[it.type]),
       num(Number(it.points)),
       str(keyText(it)),
       num(it.p === null ? null : round1(it.p * 100)),
