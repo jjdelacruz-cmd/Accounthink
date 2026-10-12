@@ -389,5 +389,8 @@ $test$;
 
 delete from public.app_settings where key = 'cron_secret';
 insert into public.app_settings (key, value) select 'cron_secret', value from smoke_secret_backup;
+-- Remove the attempts first so deleting the checker's account has no answer rows left to update
+-- (the SQL Editor runs a whole script as one transaction, which would otherwise trip a foreign key).
+delete from public.attempts where student_id in (select id from auth.users where email like 'smokecm.%@example.invalid');
 delete from auth.users where email like 'smokecm.%@example.invalid';
 select test, result, detail from smoke_results order by n;
