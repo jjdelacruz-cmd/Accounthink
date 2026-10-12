@@ -31,6 +31,7 @@ export type ReviewItem = {
   points_awarded: number | null;
   manual: boolean;
   comment: string | null;
+  checked_by_name: string | null;
 };
 
 export type AttemptReview = {
@@ -45,7 +46,7 @@ export type AttemptReview = {
     pending: number;
     device: string | null;
   };
-  student: { full_name: string; student_no: string | null; email: string | null };
+  student: { id: string; full_name: string; student_no: string | null; email: string | null; avatar: string | null };
   items: ReviewItem[];
 };
 

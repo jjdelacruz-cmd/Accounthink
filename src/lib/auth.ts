@@ -1,19 +1,22 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type Role = "student" | "instructor" | "admin";
+export type Role = "student" | "instructor" | "admin" | "checker";
 
 export type Profile = {
   id: string;
   full_name: string;
   student_no: string | null;
   role: Role;
+  /** Small JPEG as a data URL, or null. */
+  avatar: string | null;
 };
 
 export const HOME_FOR_ROLE: Record<Role, string> = {
   student: "/student",
   instructor: "/instructor",
   admin: "/instructor", // admins are instructors who can also manage users
+  checker: "/checker", // scores answers of the exams they are assigned to, nothing else
 };
 
 /** Signed-in user's profile, or null. */
@@ -26,7 +29,7 @@ export async function getProfile(): Promise<Profile | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, full_name, student_no, role")
+    .select("id, full_name, student_no, role, avatar")
     .eq("id", user.id)
     .single();
   return (data as Profile | null) ?? null;

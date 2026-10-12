@@ -62,7 +62,7 @@ export async function setResponseScore(
   points: number | null,
   comment: string,
 ): Promise<ScoreResult> {
-  await requireRole("instructor", "admin");
+  await requireRole("instructor", "admin", "checker");
   if (points !== null && !Number.isFinite(points)) return { error: "Enter a number." };
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("set_response_score", {
@@ -72,6 +72,8 @@ export async function setResponseScore(
     p_comment: comment,
   });
   if (error) return { error: error.message };
-  revalidatePath(resultsPath(courseId, examId));
+  if (courseId) revalidatePath(resultsPath(courseId, examId));
+  revalidatePath(`/checker/exams/${examId}`);
+  revalidatePath("/checker");
   return data as ScoreResult;
 }

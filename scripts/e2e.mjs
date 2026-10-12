@@ -10,6 +10,21 @@ const { chromium, devices } = await import(process.env.PLAYWRIGHT_PATH ?? "playw
 const BASE = process.env.BASE ?? "http://localhost:3200";
 const DB_URL = process.env.DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const SHOTS = process.env.SHOTS ?? "/tmp";
+// Emails: the app must be started with SMTP_* pointing at a test inbox (Supabase's local Mailpit) and the same
+// CRON_SECRET. Mailpit's web API lets this script read what was "sent".
+const MAILPIT = process.env.MAILPIT ?? "http://127.0.0.1:54324";
+const CRON_SECRET = process.env.CRON_SECRET ?? "e2e-cron-secret-123";
+const findMail = async (query) => (await (await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(query)}`)).json()).messages ?? [];
+const mailBcc = async (id) => ((await (await fetch(`${MAILPIT}/api/v1/message/${id}`)).json()).Bcc ?? []).map((x) => x.Address);
+const waitMail = async (query, tries = 20) => {
+  for (let i = 0; i < tries; i++) {
+    const m = await findMail(query);
+    if (m.length) return m;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return [];
+};
+
 const run = Date.now().toString(36);
 const PW = "trial-pass-123";
 
@@ -60,6 +75,7 @@ const leaveAndReturn = async (page, awayMs = 1200) => {
   await set("visible");
 };
 
+await fetch(`${MAILPIT}/api/v1/messages`, { method: "DELETE" }).catch(() => {});
 try {
   // ---------------------------------------------------------------- instructor
   const T = await newUser();
@@ -256,7 +272,7 @@ ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
   const autoSubmitted = await C.page.waitForURL(/\/student\/exams\//, { timeout: 20000 }).then(() => true).catch(() => false);
   ok("Leaving 3 times auto-submits", autoSubmitted);
   ok("Student sees why it ended",
-    await C.page.getByText(/Auto-submitted: left the exam too many times/).isVisible().catch(() => false));
+    await C.page.getByText(/Auto-submitted: left the exam too many times/).waitFor().then(() => true).catch(() => false));
 
   // ---- Instructor ends B
   await T.page.waitForTimeout(5500);
@@ -496,6 +512,179 @@ ANSWER: Materiality`);
     (await C.page.getByText("Good, also mention asset valuation.").count()) > 0 &&
     (await C.page.getByText(/still being checked/).count()) === 0);
   await C.page.screenshot({ path: `${SHOTS}/e2e-essay-feedback.png`, fullPage: true });
+
+  // ======================================================== Checker, photo, messages, announcements, emails
+  const idOf = (email) => sql(`select id from public.profiles where email = '${email}'`);
+  const trialId = examUrl.split("/").pop();
+  const essayId = essayUrl.split("/").pop();
+  const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+
+  // ---- Email on publish: "new exam" went to the three students
+  const newExamMails = await waitMail('subject:"New exam: Essay Quiz"');
+  ok("Publishing emails the students about the new exam", newExamMails.length >= 1);
+  const newExamBcc = newExamMails.length ? await mailBcc(newExamMails[0].ID) : [];
+  ok("The email goes to all 3 students in BCC (nobody sees the others)", newExamBcc.length === 3 && !newExamMails[0].To.some((t) => t.Address.includes("test.local")), newExamBcc.join(","));
+
+  // ---- Student photo
+  await setCamera(false);
+  await A3.page.goto(`${BASE}/account`);
+  // The photo button is enabled once the page has loaded its scripts.
+  await A3.page.waitForFunction(() => [...document.querySelectorAll("button")].some((b) => /photo/i.test(b.textContent ?? "") && !b.disabled));
+  await A3.page.getByLabel("Choose a photo").setInputFiles({ name: "me.png", mimeType: "image/png", buffer: PNG });
+  ok("Student saves a photo", await A3.page.getByText("Photo saved ✓").waitFor().then(() => true).catch(() => false));
+  const avLen = Number(sql(`select length(avatar) from public.profiles where email = '${A.email}'`));
+  ok("The photo is stored as a small JPEG (under 30 KB)", avLen > 100 && avLen < 30000, `${avLen} chars`);
+  await A3.page.reload();
+  ok("The photo shows in the header", (await A3.page.locator("header img").count()) === 1);
+  await T.page.goto(examUrl.replace(/\/exams\/.*/, "/students"));
+  ok("The instructor sees the student's photo", (await T.page.locator("li", { hasText: "Aquino, Maria" }).first().locator("img").count()) === 1);
+  await A3.page.getByRole("button", { name: "Remove" }).click();
+  ok("Student removes the photo", await A3.page.getByText("Photo removed").waitFor().then(() => true).catch(() => false));
+  await A3.page.waitForFunction(() => [...document.querySelectorAll("button")].some((b) => /photo/i.test(b.textContent ?? "") && !b.disabled));
+  await A3.page.getByLabel("Choose a photo").setInputFiles({ name: "me.png", mimeType: "image/png", buffer: PNG });
+  await A3.page.getByText("Photo saved ✓").waitFor();
+
+  // ---- Messages: student <-> instructor only
+  await A3.page.goto(`${BASE}/messages`);
+  await A3.page.getByText("Students can't message each other.").waitFor();
+  if (await A3.page.getByRole("button", { name: "＋ New message" }).count()) await A3.page.getByRole("button", { name: "＋ New message" }).click();
+  await A3.page.getByRole("link", { name: /Dela Cruz, J\./ }).click();
+  await A3.page.getByPlaceholder("Write a message").fill("Good day sir, may I ask about the essay?");
+  await A3.page.getByRole("button", { name: "Send" }).click();
+  ok("Student messages the instructor", await A3.page.getByText("Good day sir, may I ask about the essay?").waitFor().then(() => true).catch(() => false));
+  await A3.page.goto(`${BASE}/messages/${idOf(B.email)}`);
+  ok("Student can't open a conversation with another student",
+    await A3.page.getByText("Page not found").waitFor().then(() => true).catch(() => false));
+  const triedDirect = sql(`select count(*) from public.messages m join public.profiles p on p.id = m.recipient_id where p.email = '${B.email}'`);
+  ok("No message to another student exists", triedDirect === "0");
+
+  await T.page.goto(`${BASE}/messages`);
+  ok("Instructor sees an unread badge on Messages", await T.page.getByLabel("1 unread").first().waitFor().then(() => true).catch(() => false));
+  await T.page.getByRole("link", { name: /Aquino, Maria/ }).click();
+  await T.page.getByText("Good day sir, may I ask about the essay?").waitFor();
+  await T.page.getByPlaceholder("Write a message").fill("Yes, go ahead.");
+  await T.page.getByRole("button", { name: "Send" }).click();
+  await T.page.getByText("Yes, go ahead.").waitFor();
+  await A3.page.goto(`${BASE}/messages`);
+  ok("Student sees the instructor's reply in the inbox", await A3.page.getByText(/Yes, go ahead\./).waitFor().then(() => true).catch(() => false));
+  ok("...with an unread badge", (await A3.page.getByLabel("1 unread").count()) >= 1);
+  await A3.page.getByRole("link", { name: /Dela Cruz, J\./ }).first().click();
+  await A3.page.getByText("Yes, go ahead.").first().waitFor();
+  await A3.page.screenshot({ path: `${SHOTS}/e2e-messages.png`, fullPage: true });
+
+  // ---- Announcements (+ email, honoring "emails off")
+  await B2.page.goto(`${BASE}/account`);
+  await B2.page.getByLabel("Email me about exams and announcements").uncheck();
+  await B2.page.getByRole("button", { name: "Save", exact: true }).last().click();
+  ok("Student turns emails off", await B2.page.getByText(/Emails are off/).waitFor().then(() => true).catch(() => false));
+  const annUrl = examUrl.replace(/\/exams\/.*/, "/announcements");
+  await T.page.goto(annUrl);
+  await T.page.getByLabel("Title", { exact: true }).fill("Quiz on Friday");
+  await T.page.getByLabel("Message", { exact: true }).fill("Bring a calculator and a ballpen.");
+  await T.page.getByRole("button", { name: "Post announcement" }).click();
+  ok("Announcement is posted and emailed to the students who want email",
+    await T.page.getByText("Posted and emailed 2 students; 1 turned emails off.").waitFor().then(() => true).catch(() => false));
+  const annMail = await waitMail('subject:"Quiz on Friday"');
+  const annBcc = annMail.length ? await mailBcc(annMail[0].ID) : [];
+  ok("The email is addressed to the two students, not the one who opted out",
+    annBcc.length === 2 && !annBcc.includes(B.email), annBcc.join(","));
+  ok("The announcement shows in the list as emailed 2", (await T.page.getByText(/emailed 2/).count()) > 0);
+  await C.page.goto(`${BASE}/student`);
+  ok("Students see it on their dashboard", await C.page.getByText("Quiz on Friday").waitFor().then(() => true).catch(() => false));
+  await C.page.getByText("Quiz on Friday").click();
+  ok("...and can read the message", await C.page.getByText("Bring a calculator and a ballpen.").isVisible());
+  await T.page.getByLabel("Title", { exact: true }).fill("Section-only note");
+  await T.page.getByLabel("Message", { exact: true }).fill("No email for this one.");
+  await T.page.getByLabel(/Also email the students/).uncheck();
+  await T.page.getByRole("button", { name: "Post announcement" }).click();
+  ok("An announcement can be posted without email",
+    await T.page.getByText("Posted. Students see it in the app.").waitFor().then(() => true).catch(() => false));
+  ok("...and no email is sent for it", (await findMail('subject:"Section-only note"')).length === 0);
+
+  // ---- Automatic reminder 24 h before an exam opens
+  sql(`insert into public.app_settings (key, value) values ('cron_secret', '${CRON_SECRET}') on conflict (key) do update set value = excluded.value`);
+  sql(`update public.exams set opens_at = now() + interval '5 hours', reminded_at = null, notified_at = null where id = '${trialId}'`);
+  const noAuth = await fetch(`${BASE}/api/cron/reminders`);
+  ok("The reminder job refuses requests without the secret", noAuth.status === 401);
+  const run1 = await (await fetch(`${BASE}/api/cron/reminders`, { headers: { authorization: `Bearer ${CRON_SECRET}` } })).json();
+  ok("The hourly job emails the exam that opens within 24 hours", run1.exams === 1 && run1.emailed === 2, JSON.stringify(run1));
+  const remMail = await waitMail('subject:"Reminder: Trial Quiz"');
+  const remBcc = remMail.length ? await mailBcc(remMail[0].ID) : [];
+  ok("The reminder skips the student who turned emails off", remBcc.length === 2 && !remBcc.includes(B.email), remBcc.join(","));
+  const run2 = await (await fetch(`${BASE}/api/cron/reminders`, { headers: { authorization: `Bearer ${CRON_SECRET}` } })).json();
+  ok("It doesn't send the same reminder twice", run2.exams === 0 && run2.emailed === 0, JSON.stringify(run2));
+  sql(`update public.exams set opens_at = null where id = '${trialId}'`);
+
+  // ---- Admin: email status and test email
+  await T.page.goto(`${BASE}/admin`);
+  ok("Admin sees that email is set up", await T.page.getByText(/Email is set up\. Sending as/).waitFor().then(() => true).catch(() => false));
+  await T.page.getByRole("button", { name: "Send a test email to me" }).click();
+  ok("Admin sends a test email", await T.page.getByText(/Sent to .*@test\.local/).waitFor().then(() => true).catch(() => false));
+  ok("The test email arrives", (await waitMail('subject:"Accounthink test email"')).length === 1);
+
+  // ---- Checker account: sees only assigned, already-taken exams
+  const Ch = await newUser();
+  Ch.email = `chk.${run}@test.local`;
+  await signup(Ch.page, "Ramos, Checker", Ch.email);
+  sql(`update public.profiles set role = 'checker' where email = '${Ch.email}'`);
+  await Ch.page.goto(`${BASE}/`);
+  ok("A checker account lands on the checker dashboard", await Ch.page.waitForURL(/\/checker$/).then(() => true).catch(() => false));
+  ok("...which is empty until an instructor assigns an exam", (await Ch.page.getByText("Nothing yet.").count()) > 0);
+
+  // Student A takes the Essay Quiz (camera is off again), so there is an essay to check.
+  await A3.page.goto(`${BASE}/student`);
+  await A3.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  await A3.page.getByRole("button", { name: "Start exam" }).click();
+  await A3.page.getByText(/Question 1 of 2/).waitFor();
+  for (let i = 0; i < 2; i++) {
+    if (await A3.page.getByPlaceholder("Write your answer").count()) {
+      await A3.page.getByPlaceholder("Write your answer").fill("The entity is expected to continue operating, so assets stay at cost.");
+    } else {
+      await A3.page.getByPlaceholder("Type your answer").fill("Materiality");
+    }
+    await A3.page.waitForTimeout(900);
+    if (i < 1) await A3.page.getByRole("button", { name: "Next →" }).click();
+  }
+  await A3.page.getByRole("button", { name: "Submit", exact: true }).click();
+  await A3.page.getByText("All questions answered.").waitFor();
+  await A3.page.getByRole("button", { name: "Submit", exact: true }).last().click();
+  await A3.page.getByText("Submitted", { exact: true }).waitFor();
+
+  await T.page.goto(essayUrl);
+  await T.page.getByLabel("Checker's email").fill(Ch.email);
+  await T.page.getByRole("button", { name: "Add", exact: true }).click();
+  ok("Instructor assigns the checker by email", await T.page.getByText("Ramos, Checker can now check this exam.").waitFor().then(() => true).catch(() => false));
+  await Ch.page.reload();
+  ok("The checker sees the assigned exam with answers waiting",
+    await Ch.page.getByText("1 to check").waitFor().then(() => true).catch(() => false));
+  ok("...and not the exam they weren't assigned", (await Ch.page.getByText("Trial Quiz").count()) === 0);
+  await Ch.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  await Ch.page.getByText("Check answers").first().waitFor();
+  ok("The checker sees the question, the guide and the answers",
+    (await Ch.page.getByText("Your guide:").count()) > 0 && (await Ch.page.getByText("The entity is expected to continue operating").count()) > 0);
+  ok("The checker can't see item bank links, exam settings or results",
+    (await Ch.page.getByRole("link", { name: /Item bank|Results|Live monitor/ }).count()) === 0);
+  await Ch.page.screenshot({ path: `${SHOTS}/e2e-checker.png`, fullPage: true });
+  const chRow = Ch.page.locator("li", { hasText: "Aquino, Maria" }).first();
+  await chRow.getByLabel("Points").fill("3");
+  await chRow.getByRole("button", { name: "+ Add a comment for the student" }).click();
+  await chRow.getByPlaceholder(/Comment for the student/).fill("Well explained.");
+  await chRow.getByRole("button", { name: "Save", exact: true }).click();
+  ok("The checker scores the essay", await chRow.getByText(/Saved ✓ · total/).waitFor().then(() => true).catch(() => false));
+  await Ch.page.goto(`${BASE}/checker/exams/${trialId}`);
+  ok("The checker can't open an exam that wasn't assigned", await Ch.page.getByText("Page not found").waitFor().then(() => true).catch(() => false));
+  await Ch.page.goto(`${BASE}/instructor`);
+  ok("The checker is kept out of the instructor area", await Ch.page.waitForURL(/\/checker$/).then(() => true).catch(() => false));
+  await Ch.page.goto(`${BASE}/messages`);
+  ok("The checker has no messages", await Ch.page.waitForURL(/\/checker$/).then(() => true).catch(() => false));
+  await A3.page.goto(`${BASE}/student`);
+  await A3.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  ok("The student sees the checker's score and comment",
+    await A3.page.getByText("Well explained.").waitFor().then(() => true).catch(() => false));
+  await T.page.goto(`${BASE}/instructor/courses/${essayUrl.split("/")[5]}/exams/${essayId}/results`);
+  await T.page.getByRole("link", { name: /Aquino, Maria/ }).click();
+  ok("The instructor sees that the checker scored it",
+    await T.page.getByText(/by Ramos, Checker/).first().waitFor().then(() => true).catch(() => false));
 
   // ---- PWA
   const manifest = await (await L.page.request.get(`${BASE}/manifest.webmanifest`)).json();

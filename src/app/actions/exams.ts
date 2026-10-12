@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { describeEmail, emailExam } from "@/lib/notify";
 import { createClient } from "@/lib/supabase/server";
 import { manilaInputToIso } from "@/lib/time";
 import type { FormState } from "./auth";
@@ -73,6 +74,7 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
       feedback_after_close: formData.get("feedback_after_close") !== "after_submit",
       require_access_code: formData.get("require_access_code") === "on",
       require_camera: formData.get("require_camera") === "on",
+      email_students: formData.get("email_students") === "on",
       leave_limit: leaveLimit,
     })
     .eq("id", examId);
@@ -104,7 +106,9 @@ export async function updateExamSettings(_: FormState, formData: FormData): Prom
   if (formData.get("intent") === "publish") {
     const { error: e } = await supabase.from("exams").update({ status: "published" }).eq("id", examId);
     if (e) return { error: `Settings saved, but not published: ${e.message}` };
-    return { message: "Saved and published." };
+    if (formData.get("email_students") !== "on") return { message: "Saved and published." };
+    const mailed = await emailExam(supabase, examId, "new");
+    return { message: `Saved and published. ${describeEmail(mailed)}` };
   }
   return { message: "Settings saved." };
 }

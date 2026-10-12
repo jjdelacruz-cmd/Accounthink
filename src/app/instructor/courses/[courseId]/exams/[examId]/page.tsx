@@ -9,6 +9,8 @@ import {
 } from "@/app/actions/exams";
 import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
+import { CheckersCard } from "@/components/CheckersCard";
+import { EmailReminderButton } from "@/components/EmailReminderButton";
 import { ExamItemPicker, type PickerItem } from "@/components/ExamItemPicker";
 import { ExamStatusBadge } from "@/components/ExamStatusBadge";
 import { Card, Field } from "@/components/ui";
@@ -34,6 +36,7 @@ type Exam = {
   feedback_after_close: boolean;
   require_access_code: boolean;
   require_camera: boolean;
+  email_students: boolean;
   leave_limit: number | null;
 };
 
@@ -56,7 +59,7 @@ export default async function ExamBuilderPage({
   const { data: examData } = await supabase
     .from("exams")
     .select(
-      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score, feedback, feedback_after_close, require_access_code, require_camera, leave_limit",
+      "id, title, kind, instructions, time_limit_minutes, opens_at, closes_at, status, shuffle_items, shuffle_choices, show_score, feedback, feedback_after_close, require_access_code, require_camera, email_students, leave_limit",
     )
     .eq("id", examId)
     .eq("course_id", courseId)
@@ -68,6 +71,8 @@ export default async function ExamBuilderPage({
     ? { data: null }
     : await supabase.rpc("exam_check_summary", { p_exam_id: examId });
   const checkItems = (checkData ?? []) as { pending: number }[];
+  const { data: checkerData } = await supabase.rpc("exam_checkers_list", { p_exam_id: examId });
+  const checkers = (checkerData ?? []) as { checker_id: string; full_name: string; email: string | null }[];
   const toCheck = checkItems.reduce((n, c) => n + Number(c.pending), 0);
 
   const [{ data: sectionData }, { data: assigned }, { data: examItemData }, { data: bankData }] = await Promise.all([
@@ -206,6 +211,7 @@ export default async function ExamBuilderPage({
             )}
           </div>
         )}
+        {exam.status === "published" && <EmailReminderButton courseId={courseId} examId={examId} />}
         {!isDraft && (
           <p className="text-sm text-slate-600">
             <b>{started}</b> student{started === 1 ? "" : "s"} started · <b>{submitted}</b> submitted
@@ -299,6 +305,11 @@ export default async function ExamBuilderPage({
                   exam.require_access_code,
                 ],
                 [
+                  "email_students",
+                  "Email students when this exam is published, and again 24 hours before it opens (if you set an opening time)",
+                  exam.email_students,
+                ],
+                [
                   "require_camera",
                   "Camera monitoring: warn students who look away or leave the camera (runs on their phone; nothing is recorded)",
                   exam.require_camera,
@@ -349,6 +360,8 @@ export default async function ExamBuilderPage({
           />
         </ActionForm>
       </Card>
+
+      <CheckersCard courseId={courseId} examId={examId} checkers={checkers} />
 
       {/* Items */}
       <Card className="space-y-3">

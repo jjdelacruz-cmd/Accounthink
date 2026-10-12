@@ -51,3 +51,28 @@ export async function changePassword(_: FormState, formData: FormData): Promise<
   if (error) return { error: error.message };
   return { message: "Password changed." };
 }
+
+/** Saves (or removes, with null) the signed-in user's photo: a small JPEG data URL made in the browser. */
+export async function setAvatar(dataUrl: string | null): Promise<{ error?: string }> {
+  const me = await getProfile();
+  if (!me) return { error: "Not signed in." };
+  if (dataUrl !== null && (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(dataUrl) || dataUrl.length > 40000)) {
+    return { error: "That picture isn't usable. Choose a different photo." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update({ avatar: dataUrl }).eq("id", me.id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+export async function setEmailNotifications(_: FormState, formData: FormData): Promise<FormState> {
+  const me = await getProfile();
+  if (!me) return { error: "Not signed in." };
+  const on = formData.get("email_notifications") === "on";
+  const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update({ email_notifications: on }).eq("id", me.id);
+  if (error) return { error: error.message };
+  revalidatePath("/account");
+  return { message: on ? "You'll get emails about exams and announcements." : "Emails are off. You'll still see everything in the app." };
+}

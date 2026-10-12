@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { removeFromSection } from "@/app/actions/account";
 import { AppShell } from "@/components/AppShell";
+import { Avatar } from "@/components/Avatar";
 import { CourseNav } from "@/components/CourseNav";
 import { ResetPasswordButton } from "@/components/ResetPasswordButton";
 import { Card } from "@/components/ui";
@@ -12,7 +14,7 @@ type Section = {
   join_code: string;
   section_members: {
     joined_at: string;
-    profiles: { id: string; full_name: string; student_no: string | null; email: string | null } | null;
+    profiles: { id: string; full_name: string; student_no: string | null; email: string | null; avatar: string | null } | null;
   }[];
 };
 
@@ -21,7 +23,7 @@ export default async function StudentsPage({ params }: { params: Promise<{ cours
   const { profile, supabase, course } = await getOwnedCourse(courseId);
   const { data } = await supabase
     .from("sections")
-    .select("id, name, join_code, section_members(joined_at, profiles(id, full_name, student_no, email))")
+    .select("id, name, join_code, section_members(joined_at, profiles(id, full_name, student_no, email, avatar))")
     .eq("course_id", courseId)
     .order("name");
   const sections = (data ?? []) as unknown as Section[];
@@ -54,13 +56,22 @@ export default async function StudentsPage({ params }: { params: Promise<{ cours
                   const p = m.profiles!;
                   return (
                     <li key={p.id} className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{p.full_name || "—"}</p>
-                        <p className="truncate text-xs text-slate-500">
-                          {[p.student_no, p.email].filter(Boolean).join(" · ")} · joined {formatManila(m.joined_at)}
-                        </p>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <Avatar name={p.full_name} src={p.avatar} size={40} />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{p.full_name || "—"}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {[p.student_no, p.email].filter(Boolean).join(" · ")} · joined {formatManila(m.joined_at)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex shrink-0 items-start gap-2">
+                        <Link
+                          href={`/messages/${p.id}`}
+                          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold"
+                        >
+                          Message
+                        </Link>
                         <ResetPasswordButton userId={p.id} name={p.full_name || "this student"} />
                         <form action={removeFromSection}>
                           <input type="hidden" name="section_id" value={s.id} />

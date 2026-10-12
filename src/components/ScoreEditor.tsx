@@ -16,6 +16,7 @@ export function ScoreEditor({
   points,
   manual,
   comment,
+  scoredBy,
 }: {
   courseId: string;
   examId: string;
@@ -26,6 +27,8 @@ export function ScoreEditor({
   points: number | null;
   manual: boolean;
   comment: string | null;
+  /** Name of whoever set the score by hand (a checker, or the instructor). */
+  scoredBy?: string | null;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -135,7 +138,7 @@ export function ScoreEditor({
           <span className={status.ok ? "font-semibold text-emerald-700" : "font-semibold text-red-700"}>{status.text}</span>
         ) : (
           <span className="text-slate-500">
-            {manual ? "Scored by you" : points === null ? "Not checked yet" : "Automatic score from the key"}
+            {manual ? `Scored by ${scoredBy ?? "you"}` : points === null ? "Not checked yet" : "Automatic score from the key"}
           </span>
         )}
         {manual && (

@@ -5,9 +5,9 @@ export function CourseNav({
   active,
 }: {
   course: { id: string; code: string; title: string };
-  active: "items" | "exams" | "students";
+  active: "items" | "exams" | "students" | "announcements";
 }) {
-  const tab = (key: "items" | "exams" | "students", label: string) => (
+  const tab = (key: "items" | "exams" | "students" | "announcements", label: string) => (
     <Link
       href={`/instructor/courses/${course.id}/${key}`}
       className={`flex-1 rounded-lg px-3 py-2 text-center text-sm font-semibold ${
@@ -30,6 +30,7 @@ export function CourseNav({
         {tab("items", "Item bank")}
         {tab("exams", "Exams")}
         {tab("students", "Students")}
+        {tab("announcements", "Announce")}
       </nav>
     </div>
   );

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, type Role } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-const ROLES: Role[] = ["student", "instructor", "admin"];
+const ROLES: Role[] = ["student", "instructor", "admin", "checker"];
 
 export async function setUserRole(formData: FormData) {
   const me = await requireRole("admin");

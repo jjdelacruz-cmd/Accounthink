@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { Avatar } from "@/components/Avatar";
 import { ScoreEditor } from "@/components/ScoreEditor";
 import { Card } from "@/components/ui";
 import { END_REASON_LABEL } from "@/lib/attempts";
@@ -73,7 +74,8 @@ export default async function AttemptReviewPage({
       </Link>
 
       <Card className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <Avatar name={r.student.full_name} src={r.student.avatar} size={56} />
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl font-bold">{r.student.full_name || "—"}</h1>
           <p className="text-sm text-slate-500">
             {[r.student.student_no, r.student.email, a.device].filter(Boolean).join(" · ")}
@@ -131,7 +133,7 @@ export default async function AttemptReviewPage({
                     }`}
                   >
                     {toCheck ? `To check · ${Number(it.points)} pts` : `${full ? "✓" : partial ? "½" : "✗"} ${earned ?? 0}/${Number(it.points)}`}
-                    {it.manual && " · by you"}
+                    {it.manual && ` · by ${it.checked_by_name ?? "you"}`}
                   </span>
                 )}
               </div>
@@ -148,6 +150,7 @@ export default async function AttemptReviewPage({
                   points={earned}
                   manual={it.manual}
                   comment={it.comment}
+                  scoredBy={it.checked_by_name}
                 />
               )}
             </li>

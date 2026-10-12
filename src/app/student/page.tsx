@@ -46,9 +46,39 @@ export default async function StudentHome() {
     .order("opens_at", { ascending: true, nullsFirst: false });
   const exams = (examData ?? []) as StudentExam[];
 
+  // RLS returns only announcements for the student's own sections.
+  const { data: annData } = await supabase
+    .from("announcements")
+    .select("id, title, body, created_at, courses(code)")
+    .order("created_at", { ascending: false })
+    .limit(5);
+  const announcements = (annData ?? []) as unknown as {
+    id: string;
+    title: string;
+    body: string;
+    created_at: string;
+    courses: { code: string } | null;
+  }[];
+
   return (
     <AppShell profile={profile}>
       <InstallPrompt />
+      {announcements.length > 0 && (
+        <section className="space-y-2" aria-label="Announcements">
+          <h2 className="font-semibold">Announcements</h2>
+          {announcements.map((a) => (
+            <details key={a.id} className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
+              <summary className="cursor-pointer">
+                <span className="font-semibold">{a.title}</span>
+                <span className="block text-xs text-slate-500">
+                  {a.courses?.code} · {formatManila(a.created_at)}
+                </span>
+              </summary>
+              <p className="mt-2 whitespace-pre-line text-sm text-slate-800">{a.body}</p>
+            </details>
+          ))}
+        </section>
+      )}
       <Card>
         <h2 className="mb-3 font-semibold">Join a class</h2>
         <ActionForm action={joinSection} submitLabel="Join" pendingLabel="Joining…">

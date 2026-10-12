@@ -18,12 +18,16 @@ Installable as an app (PWA) on Android and iPhone.
 - [x] **Student feedback** — after submitting, students see each question marked right / wrong (and, if allowed, the correct answers), with a "Mistakes only" view; the instructor picks what they see and whether it shows right away or only after the exam closes
 - [x] **Essays + checking by hand** — essay questions (TYPE: Essay in imports) wait for the instructor; on *Check answers* the instructor scores essays and can override any identification / enumeration answer, with a comment for the student. Hand scores survive re-grading
 - [x] **Camera monitoring** (optional per exam) — the phone's front camera checks for a face, looking away, or a second face, warns the student on screen and logs warnings for the live monitor. Runs fully on the phone (MediaPipe face model, self-hosted); no picture is stored or sent
+- [x] **Checker accounts** — a separate role (set by the admin) that scores only the essay / identification / enumeration answers of exams an instructor assigns to it, and only after students have taken them. No item bank, results, other exams or messages
+- [x] **Student photo** — students add a photo under Account (cropped and shrunk on their phone, stored as a small JPEG); instructors see it on the Students tab and reviews
+- [x] **Messages** — a student and the instructors of their classes can message each other; student-to-student is impossible (enforced in the database). Unread badge in the header
+- [x] **Announcements and email** — instructors post announcements per course or section (optionally emailed); students get an email when an exam is published and 24 hours before it opens; students can turn emails off under Account
 - [x] **Password reset without email** — instructors reset students in their sections, admins anyone but admins; everyone can change their own password under Account
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0010_…`). Each is safe to re-run.
+   (`0001_…` through `0011_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
@@ -33,6 +37,30 @@ Installable as an app (PWA) on Android and iPhone.
    and set **Site URL** (Authentication → URL Configuration) to your app URL
    (`http://localhost:3000` while developing).
 4. `npm install && npm run dev`
+
+### Email setup (optional)
+
+Accounthink sends email through any SMTP account. Nothing breaks without it: students still see announcements and exams in the app.
+Set these in Netlify → Site configuration → Environment variables, then redeploy:
+
+| Variable | Example |
+| --- | --- |
+| `SMTP_HOST` | `smtp.gmail.com` (Gmail) or `smtp-relay.brevo.com` (Brevo) |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | your Gmail address / your Brevo SMTP login |
+| `SMTP_PASS` | a Gmail **app password** (Google Account → Security → 2-Step Verification → App passwords) / your Brevo SMTP key |
+| `MAIL_FROM` | `Accounthink <you@gmail.com>` (must be an address you are allowed to send from) |
+| `SITE_URL` | `https://accounthinkolfu.netlify.app` (used for the button in emails) |
+
+Both Gmail (about 500 emails a day) and Brevo (300 a day) are free. Open **Manage users** as admin to see the status and send yourself a test email.
+
+**24-hour reminders** run from a scheduled Netlify function (`netlify/functions/reminders.mjs`, hourly) that calls `/api/cron/reminders`.
+Pick a secret of at least 12 characters, add it to Netlify as `CRON_SECRET`, and store the same value in the database (Supabase SQL Editor):
+
+```sql
+insert into public.app_settings (key, value) values ('cron_secret', 'YOUR-SECRET-HERE')
+on conflict (key) do update set value = excluded.value;
+```
 
 ### Making the first admin
 
