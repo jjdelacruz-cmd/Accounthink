@@ -101,7 +101,7 @@ try {
   ok("Course + section created, join code shown", /^[A-Z2-9]{6}$/.test(joinCode), joinCode);
 
   // Import items
-  await T.page.getByRole("link", { name: "Item bank" }).click();
+  await T.page.getByRole("link", { name: "Items", exact: true }).click();
   await T.page.getByRole("link", { name: "⬆ Import" }).click();
   await T.page.locator("textarea").fill(`1. Which is the MOST reliable audit evidence?
 A. Oral representations from management

@@ -6,3 +6,36 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Touch: no double-tap zoom delay, a visible press state, and a comfortable minimum tap size.
+   In the base layer so any size set on a specific button (min-h-12, h-11 …) still wins. */
+@layer base {
+  a, button, summary, label, select, input[type="checkbox"], input[type="radio"] {
+    touch-action: manipulation;
+  }
+  button:not(:disabled):active,
+  a[class*="rounded"]:active {
+    filter: brightness(0.94);
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  main button:not(.sr-only),
+  main summary {
+    min-height: 2.5rem;
+  }
+  /* Links that look like buttons (bordered / filled and rounded) */
+  main a[class*="rounded"][class*="border"],
+  main a[class*="rounded"][class*="bg-emerald"],
+  main a[class*="rounded"][class*="bg-slate-9"] {
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  button, a[class*="rounded"] {
+    transition: filter 80ms ease, background-color 120ms ease;
+  }
+}

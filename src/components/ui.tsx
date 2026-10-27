@@ -37,7 +37,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`min-h-12 rounded-xl px-4 py-3 text-base font-semibold disabled:opacity-50 ${styles} ${className}`}
+      className={`min-h-12 rounded-xl px-4 py-3 text-base font-semibold active:scale-[0.99] disabled:opacity-50 ${styles} ${className}`}
     />
   );
 }

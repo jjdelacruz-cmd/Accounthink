@@ -81,7 +81,7 @@ export function DownloadAllGradebooks({ className = "" }: Props) {
             }
           })
         }
-        className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold disabled:opacity-50"
+        className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold disabled:opacity-50 sm:w-auto"
       >
         {pending ? "Preparing…" : "⬇ Scores of all my subjects (Excel)"}
       </button>

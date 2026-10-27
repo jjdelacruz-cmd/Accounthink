@@ -44,7 +44,7 @@ export default async function InstructorHome() {
         )}
       </div>
 
-      {courses.length > 0 && <DownloadAllGradebooks />}
+      {courses.length > 0 && <DownloadAllGradebooks className="sm:w-fit" />}
 
       {courses.length === 0 && (
         <p className="text-sm text-slate-600">No courses yet. Add your first one below.</p>
@@ -62,7 +62,7 @@ export default async function InstructorHome() {
               href={`/instructor/courses/${course.id}/items`}
               className="rounded-xl border border-slate-300 px-3 py-3 text-center text-sm font-semibold"
             >
-              Item bank
+              Items
             </Link>
             <Link
               href={`/instructor/courses/${course.id}/exams`}
