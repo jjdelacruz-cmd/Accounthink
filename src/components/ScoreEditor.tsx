@@ -46,7 +46,10 @@ export function ScoreEditor({
         return;
       }
       if (p === null) setValue("");
-      setStatus({ ok: true, text: `Saved ✓ · total ${Number(res.score)}/${Number(res.max_score)}` });
+      setStatus({
+        ok: true,
+        text: `Saved ✓ · total ${Number(res.score)}/${Number(res.max_score)}${res.notify ? " · student will be notified" : ""}`,
+      });
       router.refresh();
     });
   };

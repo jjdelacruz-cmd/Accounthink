@@ -192,5 +192,8 @@ exception when others then
 end
 $test$;
 
+-- Remove the attempts first so deleting the instructor's account has no score-change rows left to update
+-- (the SQL Editor runs a whole script as one transaction, which would otherwise trip a foreign key).
+delete from public.attempts where student_id in (select id from auth.users where email like 'smoke7.%@example.invalid');
 delete from auth.users where email like 'smoke7.%@example.invalid';
 select test, result, detail from smoke_results order by n;

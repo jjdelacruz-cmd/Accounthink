@@ -22,12 +22,14 @@ Installable as an app (PWA) on Android and iPhone.
 - [x] **Student photo** — students add a photo under Account (cropped and shrunk on their phone, stored as a small JPEG); instructors see it on the Students tab and reviews
 - [x] **Messages** — a student and the instructors of their classes can message each other; student-to-student is impossible (enforced in the database). Unread badge in the header
 - [x] **Announcements and email** — instructors post announcements per course or section (optionally emailed); students get an email when an exam is published and 24 hours before it opens; students can turn emails off under Account
+- [x] **Scores download** — a Scores tab per subject with every exam's scores per student (preview + Excel: one sheet for everyone and one per section, class average under each, plus Exams and Notes sheets). A button on My courses downloads all subjects in one file
+- [x] **Score-change notices** — when a score changes after submission (an instructor or checker scored an answer by hand, or the exam was re-graded), the student sees a notice on their dashboard and gets one email (sent by the hourly job once nothing changed for 10 minutes). Not sent when the exam hides scores from students
 - [x] **Password reset without email** — instructors reset students in their sections, admins anyone but admins; everyone can change their own password under Account
 
 ## Setup
 
 1. **Supabase project** → SQL Editor → run each file in `supabase/migrations/` in order
-   (`0001_…` through `0011_…`). Each is safe to re-run.
+   (`0001_…` through `0012_…`). Each is safe to re-run.
    Then run the matching `supabase/tests/phaseN_smoke_test.sql`; every row should say PASS.
 2. **Env vars**: copy `.env.local.example` to `.env.local` and fill in the project URL and
    publishable key (Supabase → Project Settings → API Keys).
@@ -54,7 +56,7 @@ Set these in Netlify → Site configuration → Environment variables, then rede
 
 Both Gmail (about 500 emails a day) and Brevo (300 a day) are free. Open **Manage users** as admin to see the status and send yourself a test email.
 
-**24-hour reminders** run from a scheduled Netlify function (`netlify/functions/reminders.mjs`, hourly) that calls `/api/cron/reminders`.
+**24-hour reminders and score-change emails** run from a scheduled Netlify function (`netlify/functions/reminders.mjs`, hourly) that calls `/api/cron/reminders`.
 Pick a secret of at least 12 characters, add it to Netlify as `CRON_SECRET`, and store the same value in the database (Supabase SQL Editor):
 
 ```sql

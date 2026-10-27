@@ -437,7 +437,7 @@ ANSWER: Materiality`);
 
   // Camera check before starting: the fake camera shows no face, so Start stays hidden.
   await C.page.goto(`${BASE}/student`);
-  await C.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  await C.page.getByRole("link", { name: /Essay Quiz/ }).last().click();
   ok("Students are told the exam uses the camera",
     await C.page.getByText("This exam uses your front camera").waitFor().then(() => true).catch(() => false));
   await C.page.getByRole("button", { name: "Turn on camera" }).click();
@@ -564,9 +564,13 @@ ANSWER: Materiality`);
   await T.page.getByText("Good day sir, may I ask about the essay?").waitFor();
   await T.page.getByPlaceholder("Write a message").fill("Yes, go ahead.");
   await T.page.getByRole("button", { name: "Send" }).click();
+  // Wait until the reply is really saved (the text is also visible in the box while it is being typed).
+  for (let i = 0; i < 40 && sql(`select count(*) from public.messages m join public.profiles p on p.id = m.recipient_id where m.body = 'Yes, go ahead.' and p.email = '${A.email}'`) === "0"; i++) await T.page.waitForTimeout(250);
   await T.page.getByText("Yes, go ahead.").waitFor();
   await A3.page.goto(`${BASE}/messages`);
-  ok("Student sees the instructor's reply in the inbox", await A3.page.getByText(/Yes, go ahead\./).waitFor().then(() => true).catch(() => false));
+  const replyShown = await A3.page.getByText(/Yes, go ahead\./).first().waitFor().then(() => true).catch(() => false);
+  ok("Student sees the instructor's reply in the inbox", replyShown, `${await A3.page.getByText(/Yes, go ahead\./).count()} match(es)`);
+  if (!replyShown) console.log("  [debug] /messages shows:", (await A3.page.locator("main").innerText()).replace(/\n+/g, " | ").slice(0, 400), "| url", A3.page.url());
   ok("...with an unread badge", (await A3.page.getByLabel("1 unread").count()) >= 1);
   await A3.page.getByRole("link", { name: /Dela Cruz, J\./ }).first().click();
   await A3.page.getByText("Yes, go ahead.").first().waitFor();
@@ -633,7 +637,7 @@ ANSWER: Materiality`);
 
   // Student A takes the Essay Quiz (camera is off again), so there is an essay to check.
   await A3.page.goto(`${BASE}/student`);
-  await A3.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  await A3.page.getByRole("link", { name: /Essay Quiz/ }).last().click();
   await A3.page.getByRole("button", { name: "Start exam" }).click();
   await A3.page.getByText(/Question 1 of 2/).waitFor();
   for (let i = 0; i < 2; i++) {
@@ -658,7 +662,7 @@ ANSWER: Materiality`);
   ok("The checker sees the assigned exam with answers waiting",
     await Ch.page.getByText("1 to check").waitFor().then(() => true).catch(() => false));
   ok("...and not the exam they weren't assigned", (await Ch.page.getByText("Trial Quiz").count()) === 0);
-  await Ch.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  await Ch.page.getByRole("link", { name: /Essay Quiz/ }).last().click();
   await Ch.page.getByText("Check answers").first().waitFor();
   ok("The checker sees the question, the guide and the answers",
     (await Ch.page.getByText("Your guide:").count()) > 0 && (await Ch.page.getByText("The entity is expected to continue operating").count()) > 0);
@@ -678,13 +682,127 @@ ANSWER: Materiality`);
   await Ch.page.goto(`${BASE}/messages`);
   ok("The checker has no messages", await Ch.page.waitForURL(/\/checker$/).then(() => true).catch(() => false));
   await A3.page.goto(`${BASE}/student`);
-  await A3.page.getByRole("link", { name: /Essay Quiz/ }).click();
+  await A3.page.getByRole("link", { name: /Essay Quiz/ }).last().click();
   ok("The student sees the checker's score and comment",
     await A3.page.getByText("Well explained.").waitFor().then(() => true).catch(() => false));
   await T.page.goto(`${BASE}/instructor/courses/${essayUrl.split("/")[5]}/exams/${essayId}/results`);
   await T.page.getByRole("link", { name: /Aquino, Maria/ }).click();
   ok("The instructor sees that the checker scored it",
     await T.page.getByText(/by Ramos, Checker/).first().waitFor().then(() => true).catch(() => false));
+
+  // ======================================================== Scores download (Excel) and score-change notices
+  const { default: readXlsxFile, readSheet } = await import("read-excel-file/node");
+  const courseId = examUrl.split("/")[5];
+  const courseBase = `${BASE}/instructor/courses/${courseId}`;
+  const dbScore = (email, title) =>
+    Number(sql(`select a.score from public.attempts a join public.exams e on e.id = a.exam_id join public.profiles p on p.id = a.student_id
+                where p.email = '${email}' and e.title = '${title}'`));
+
+  // Put Cruz in a second section so the file gets a sheet per section.
+  const sec2 = sql(`with s as (insert into public.sections (course_id, name) values ('${courseId}', 'TEST-2') returning id) select id from s`);
+  sql(`update public.section_members set section_id = '${sec2}' where student_id = (select id from public.profiles where email = '${C.email}')`);
+
+  await T.page.goto(`${courseBase}/exams`);
+  await T.page.getByRole("link", { name: "Scores", exact: true }).click();
+  await T.page.waitForURL(/\/scores$/);
+  ok("Scores tab shows each student with each exam",
+    (await T.page.getByRole("columnheader", { name: /Trial Quiz/ }).count()) === 1 &&
+    (await T.page.getByRole("columnheader", { name: /Essay Quiz/ }).count()) === 1 &&
+    (await T.page.getByRole("cell", { name: /Aquino, Maria/ }).count()) === 1 &&
+    (await T.page.getByText("Average (of those who took it)").count()) === 1);
+  await T.page.screenshot({ path: `${SHOTS}/e2e-scores.png`, fullPage: true });
+  ok("Section buttons appear when there are 2 sections", (await T.page.getByRole("link", { name: "TEST-2", exact: true }).count()) === 1);
+  await T.page.getByRole("link", { name: "TEST-2", exact: true }).click();
+  await T.page.waitForURL(/scores\?section=/);
+  ok("Choosing a section shows only its students",
+    (await T.page.getByRole("cell", { name: /Cruz, Ana/ }).count()) === 1 && (await T.page.getByRole("cell", { name: /Aquino, Maria/ }).count()) === 0);
+  await T.page.goto(`${courseBase}/scores`);
+
+  const [gb] = await Promise.all([T.page.waitForEvent("download"), T.page.getByRole("button", { name: /Excel: AUDI314/ }).click()]);
+  ok("Excel file is named after the subject", gb.suggestedFilename() === "AUDI314 scores.xlsx", gb.suggestedFilename());
+  const gbFile = `${SHOTS}/e2e-scores.xlsx`;
+  await gb.saveAs(gbFile);
+  const names = (await readXlsxFile(gbFile)).map((x) => x.sheet);
+  ok("Workbook: everyone, one sheet per section, Exams, Notes",
+    JSON.stringify(names) === JSON.stringify(["All sections", "TEST-1", "TEST-2", "Exams", "Notes"]), JSON.stringify(names));
+  const allRows = await readSheet(gbFile, "All sections");
+  const col = (title) => allRows[0].findIndex((h) => String(h).startsWith(title));
+  const rowOf = (rows, name) => rows.find((r) => String(r[2]).startsWith(name));
+  const aq = rowOf(allRows, "Aquino");
+  ok("Header shows each exam with its points", /\(6 pts\)/.test(String(allRows[0][col("Trial Quiz")])) && /\(5 pts\)/.test(String(allRows[0][col("Essay Quiz")])));
+  ok("Aquino's scores match the database (both exams)",
+    aq && aq[col("Trial Quiz")] === dbScore(A.email, "Trial Quiz") && aq[col("Essay Quiz")] === dbScore(A.email, "Essay Quiz"),
+    JSON.stringify(aq));
+  const cr = rowOf(allRows, "Cruz");
+  ok("Cruz's scores match the database too", cr && cr[col("Trial Quiz")] === dbScore(C.email, "Trial Quiz") && cr[col("Essay Quiz")] === dbScore(C.email, "Essay Quiz"), JSON.stringify(cr));
+  ok("Total and Overall % are worked out",
+    aq && aq[col("Total")] === dbScore(A.email, "Trial Quiz") + dbScore(A.email, "Essay Quiz") && aq[col("Out of")] === 11 &&
+    aq[col("Overall %")] === Math.round(((dbScore(A.email, "Trial Quiz") + dbScore(A.email, "Essay Quiz")) / 11) * 1000) / 10, JSON.stringify(aq));
+  const sec1 = await readSheet(gbFile, "TEST-1");
+  const sec2rows = await readSheet(gbFile, "TEST-2");
+  ok("Each section sheet has only its own students",
+    !!rowOf(sec1, "Aquino") && !rowOf(sec1, "Cruz") && !!rowOf(sec2rows, "Cruz") && !rowOf(sec2rows, "Aquino"));
+  ok("Class average sits under the table", allRows.some((r) => String(r[3]).startsWith("Average")));
+  const exSheet = await readSheet(gbFile, "Exams");
+  ok("Exams sheet lists both exams", exSheet.length === 3 && exSheet.some((r) => r[1] === "Trial Quiz") && exSheet.some((r) => r[1] === "Essay Quiz"));
+  const noteSheet = await readSheet(gbFile, "Notes");
+  ok("Notes sheet explains the symbols", noteSheet.some((r) => String(r[0]).includes("ABS")));
+
+  await T.page.goto(`${courseBase}/scores?section=${sec2}`);
+  const [gbOne] = await Promise.all([T.page.waitForEvent("download"), T.page.getByRole("button", { name: /Excel: only TEST-2/ }).click()]);
+  ok("A single section can be downloaded on its own", gbOne.suggestedFilename() === "AUDI314 TEST-2 scores.xlsx", gbOne.suggestedFilename());
+  await gbOne.saveAs(`${SHOTS}/e2e-scores-section.xlsx`);
+  const oneNames = (await readXlsxFile(`${SHOTS}/e2e-scores-section.xlsx`)).map((x) => x.sheet);
+  ok("...with just that section, Exams and Notes", JSON.stringify(oneNames) === JSON.stringify(["TEST-2", "Exams", "Notes"]), JSON.stringify(oneNames));
+
+  await T.page.goto(`${BASE}/instructor`);
+  const [gbAll] = await Promise.all([T.page.waitForEvent("download"), T.page.getByRole("button", { name: /Scores of all my subjects/ }).click()]);
+  ok("My courses has a download for all subjects", gbAll.suggestedFilename() === "Accounthink scores - all subjects.xlsx", gbAll.suggestedFilename());
+  await gbAll.saveAs(`${SHOTS}/e2e-scores-all.xlsx`);
+  ok("...and it contains the subject's scores", (await readXlsxFile(`${SHOTS}/e2e-scores-all.xlsx`)).some((x) => x.sheet === "All sections"));
+
+  // ---- Students are told when their score is changed by hand
+  await A3.page.goto(`${BASE}/student`);
+  ok("The student sees a notice that the checker's scoring changed the score",
+    await A3.page.getByText("Your score was updated").waitFor().then(() => true).catch(() => false) &&
+    (await A3.page.getByText(/AUDI314 · Essay Quiz/).count()) >= 1 && (await A3.page.getByText("Your instructor checked or adjusted your answers.").count()) === 1);
+  const oldNew = (await A3.page.locator("section[aria-label='Score updates']").innerText()).replace(/\s+/g, " ");
+  ok("...showing old score → new score out of the total", /1\s*→\s*4\s*\/\s*5/.test(oldNew), oldNew.slice(0, 160));
+  await A3.page.screenshot({ path: `${SHOTS}/e2e-score-notice.png`, fullPage: true });
+  await A3.page.getByRole("button", { name: "Got it" }).click();
+  await A3.page.getByText("Your score was updated").waitFor({ state: "detached" });
+  await A3.page.reload();
+  ok("Tapping Got it clears the notice for good", (await A3.page.getByText("Your score was updated").count()) === 0);
+
+  // The instructor changes it again from the review page.
+  await T.page.goto(`${essayUrl}/results`);
+  await T.page.getByRole("link", { name: /Aquino, Maria/ }).click();
+  const essayRow = T.page.locator("li", { hasText: "Explain the going concern assumption." }).first();
+  await essayRow.getByLabel("Points").fill("4");
+  await essayRow.getByRole("button", { name: "Save", exact: true }).click();
+  ok("The instructor is told the student will be notified",
+    await essayRow.getByText(/Saved ✓ · total 5\/5 · student will be notified/).waitFor().then(() => true).catch(() => false));
+  await essayRow.getByRole("button", { name: "Save", exact: true }).click();
+  ok("Saving the same score again does not claim to notify",
+    await essayRow.getByText(/Saved ✓ · total 5\/5$/).waitFor().then(() => true).catch(() => false));
+  await A3.page.goto(`${BASE}/student`);
+  const oldNew2 = await A3.page.locator("section[aria-label='Score updates']").innerText().then((t) => t.replace(/\s+/g, " ")).catch(() => "");
+  ok("A new notice appears for the new change: 4 → 5 / 5", /4\s*→\s*5\s*\/\s*5/.test(oldNew2), oldNew2.slice(0, 160));
+
+  // ---- Email: one message per student, after the changes have settled
+  const scoreRun0 = await (await fetch(`${BASE}/api/cron/reminders`, { headers: { authorization: `Bearer ${CRON_SECRET}` } })).json();
+  ok("A fresh change is held back for 10 minutes before any email to that student",
+    (await findMail('subject:"Your score in Essay Quiz was updated"')).length === 0, JSON.stringify(scoreRun0));
+  sql(`update public.score_changes set created_at = now() - interval '20 minutes'`);
+  const scoreRun1 = await (await fetch(`${BASE}/api/cron/reminders`, { headers: { authorization: `Bearer ${CRON_SECRET}` } })).json();
+  ok("After 10 quiet minutes the hourly job emails the student", scoreRun1.scoreEmails >= 1 && (scoreRun1.failures ?? []).length === 0, JSON.stringify(scoreRun1));
+  const scoreMail = await waitMail('subject:"Your score in Essay Quiz was updated"');
+  const scoreBcc = scoreMail.length ? await mailBcc(scoreMail[0].ID) : [];
+  ok("The email goes to that student only", scoreMail.length >= 1 && scoreBcc.length === 1 && scoreBcc[0] === A.email, scoreBcc.join(","));
+  const scoreText = scoreMail.length ? ((await (await fetch(`${MAILPIT}/api/v1/message/${scoreMail[0].ID}`)).json()).Text ?? "") : "";
+  ok("It says how the score changed (all changes since the last email: 1 → 5 / 5)", /1 → 5 \/ 5/.test(scoreText) && /checked or adjusted/.test(scoreText), scoreText.replace(/\s+/g, " ").slice(0, 160));
+  const scoreRun2 = await (await fetch(`${BASE}/api/cron/reminders`, { headers: { authorization: `Bearer ${CRON_SECRET}` } })).json();
+  ok("The same change isn't emailed twice", scoreRun2.scoreEmails === 0, JSON.stringify(scoreRun2));
 
   // ---- PWA
   const manifest = await (await L.page.request.get(`${BASE}/manifest.webmanifest`)).json();

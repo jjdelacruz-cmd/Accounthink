@@ -48,7 +48,7 @@ export async function setPassingPercent(_: FormState, formData: FormData): Promi
   return { message: value === null ? "Passing mark cleared." : `Passing mark set to ${value}%.` };
 }
 
-export type ScoreResult = { error?: string; score?: number; max_score?: number; pending?: number };
+export type ScoreResult = { error?: string; score?: number; max_score?: number; pending?: number; notify?: boolean };
 
 /**
  * Set a student's score for one identification / enumeration / essay answer by hand.

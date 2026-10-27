@@ -3,6 +3,7 @@ import { joinSection } from "@/app/actions/student";
 import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { ScoreUpdates, type ScoreUpdate } from "@/components/ScoreUpdates";
 import { Card, Field } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -46,6 +47,10 @@ export default async function StudentHome() {
     .order("opens_at", { ascending: true, nullsFirst: false });
   const exams = (examData ?? []) as StudentExam[];
 
+  // Scores that changed since the student last dismissed the notice (only for exams whose scores they can see).
+  const { data: updateData } = await supabase.rpc("my_score_updates");
+  const scoreUpdates = (updateData ?? []) as ScoreUpdate[];
+
   // RLS returns only announcements for the student's own sections.
   const { data: annData } = await supabase
     .from("announcements")
@@ -63,6 +68,7 @@ export default async function StudentHome() {
   return (
     <AppShell profile={profile}>
       <InstallPrompt />
+      <ScoreUpdates updates={scoreUpdates} />
       {announcements.length > 0 && (
         <section className="space-y-2" aria-label="Announcements">
           <h2 className="font-semibold">Announcements</h2>

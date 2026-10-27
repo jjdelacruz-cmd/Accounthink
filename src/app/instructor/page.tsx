@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createCourse, createSection, setJoinOpen } from "@/app/actions/instructor";
 import { ActionForm } from "@/components/ActionForm";
+import { DownloadAllGradebooks } from "@/components/DownloadGradebook";
 import { AppShell } from "@/components/AppShell";
 import { Card, Field } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
@@ -43,6 +44,8 @@ export default async function InstructorHome() {
         )}
       </div>
 
+      {courses.length > 0 && <DownloadAllGradebooks />}
+
       {courses.length === 0 && (
         <p className="text-sm text-slate-600">No courses yet. Add your first one below.</p>
       )}
@@ -54,7 +57,7 @@ export default async function InstructorHome() {
             <h2 className="text-lg font-semibold">{course.title}</h2>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Link
               href={`/instructor/courses/${course.id}/items`}
               className="rounded-xl border border-slate-300 px-3 py-3 text-center text-sm font-semibold"
@@ -66,6 +69,12 @@ export default async function InstructorHome() {
               className="rounded-xl bg-emerald-700 px-3 py-3 text-center text-sm font-semibold text-white"
             >
               Exams
+            </Link>
+            <Link
+              href={`/instructor/courses/${course.id}/scores`}
+              className="rounded-xl border border-slate-300 px-3 py-3 text-center text-sm font-semibold"
+            >
+              Scores
             </Link>
           </div>
 

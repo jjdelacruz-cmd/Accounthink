@@ -52,6 +52,35 @@ export function reminderMail(e: ExamInfo): Mail {
   };
 }
 
+export type ScoreUpdateInfo = {
+  name: string;
+  course: string;
+  exam: string;
+  oldScore: number | null;
+  newScore: number;
+  maxScore: number;
+  byHand: boolean;
+};
+
+/** "Your score was updated" for one student (sent alone, since the numbers are personal). */
+export function scoreUpdateMail(u: ScoreUpdateInfo): Mail {
+  const change = u.oldScore === null ? `${u.newScore} / ${u.maxScore}` : `${u.oldScore} → ${u.newScore} / ${u.maxScore}`;
+  const why = u.byHand
+    ? "Your instructor checked or adjusted your answers."
+    : "Scores were re-graded after the answer key was corrected.";
+  const hello = u.name ? `Hi ${u.name.split(",").pop()!.trim().split(" ")[0]},` : "Hi,";
+  return {
+    subject: `[${u.course}] Your score in ${u.exam} was updated`,
+    text: `${hello}\n\n${u.course} · ${u.exam}\nYour score: ${change}\n\n${why}${footer()}${optOut}`,
+    html: wrap(
+      `Your score was updated`,
+      `<p style="color:#64748b;margin-top:0">${esc(u.course)} · ${esc(u.exam)}</p>
+<p style="font-size:26px;font-weight:700;margin:8px 0">${u.oldScore === null ? "" : `<span style="color:#94a3b8;text-decoration:line-through">${u.oldScore}</span> → `}${u.newScore} <span style="font-size:16px;color:#64748b;font-weight:400">/ ${u.maxScore}</span></p>
+<p>${esc(why)}</p>`,
+    ),
+  };
+}
+
 export function testMail(): Mail {
   return {
     subject: "Accounthink test email",
