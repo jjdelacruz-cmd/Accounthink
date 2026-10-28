@@ -35,7 +35,7 @@ export async function AppShell({ profile, children }: { profile: Profile; childr
     <div className="min-h-dvh bg-ink-50">
       <header className="sticky top-0 z-10 bg-brand-800 text-white shadow-raised">
         <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-1.5 sm:px-4">
-          <LogoMark size={32} tone="light" className="hidden min-[400px]:block" />
+          <LogoMark size={32} className="hidden min-[360px]:block" />
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <Avatar name={profile.full_name} src={profile.avatar} size={40} className="ring-2 ring-white/60" />
             {/* The name needs room; on a small phone the avatar and the buttons come first. */}

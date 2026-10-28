@@ -243,15 +243,11 @@ export function Icon({
   );
 }
 
-/** Small brand mark: an "A" with a tick-shaped crossbar on a rounded square. Decorative. */
-export function LogoMark({ size = 32, tone = "brand", className = "" }: { size?: number; tone?: "brand" | "light"; className?: string }) {
-  const bg = tone === "brand" ? "var(--color-brand-700)" : "#fff";
-  const fg = tone === "brand" ? "#fff" : "var(--color-brand-800)";
+/** The official OLFU College of Business Administration seal (public/logo*.png). Decorative. */
+export function LogoMark({ size = 32, className = "" }: { size?: number; className?: string }) {
+  const src = size > 56 ? "/logo.png" : "/logo-128.png";
   return (
-    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true" focusable="false" className={`shrink-0 ${className}`}>
-      <rect width="32" height="32" rx="9" fill={bg} />
-      <path d="M8.5 24 16 7.5 23.5 24" fill="none" stroke={fg} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="m12.6 19.2 2.6 2.4 4.4-4.6" fill="none" stroke={fg} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element -- a small static seal; nothing to optimize
+    <img src={src} width={size} height={size} alt="" className={`shrink-0 rounded-full bg-white ring-2 ring-white/70 ${className}`} />
   );
 }

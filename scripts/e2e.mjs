@@ -535,7 +535,7 @@ ANSWER: Materiality`);
   const avLen = Number(sql(`select length(avatar) from public.profiles where email = '${A.email}'`));
   ok("The photo is stored as a small JPEG (under 30 KB)", avLen > 100 && avLen < 30000, `${avLen} chars`);
   await A3.page.reload();
-  ok("The photo shows in the header", (await A3.page.locator("header img").count()) === 1);
+  ok("The photo shows in the header", (await A3.page.locator("header img[src^=\"data:\"]").count()) === 1);
   await T.page.goto(examUrl.replace(/\/exams\/.*/, "/students"));
   ok("The instructor sees the student's photo", (await T.page.locator("li", { hasText: "Aquino, Maria" }).first().locator("img").count()) === 1);
   await A3.page.getByRole("button", { name: "Remove" }).click();

@@ -2,7 +2,7 @@
 // Deliberately minimal: it caches only static build files, icons and an offline
 // page. Pages, exam questions, answers and server actions always go to the
 // network, so nobody can ever see stale questions or submit from a cache.
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `accounthink-static-${VERSION}`;
 const OFFLINE_URL = "/offline";
 
