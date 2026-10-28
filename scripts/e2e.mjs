@@ -796,9 +796,15 @@ ANSWER: Materiality`);
   sql(`update public.score_changes set created_at = now() - interval '20 minutes'`);
   const scoreRun1 = await (await fetch(`${BASE}/api/cron/reminders`, { headers: { authorization: `Bearer ${CRON_SECRET}` } })).json();
   ok("After 10 quiet minutes the hourly job emails the student", scoreRun1.scoreEmails >= 1 && (scoreRun1.failures ?? []).length === 0, JSON.stringify(scoreRun1));
-  const scoreMail = await waitMail('subject:"Your score in Essay Quiz was updated"');
-  const scoreBcc = scoreMail.length ? await mailBcc(scoreMail[0].ID) : [];
-  ok("The email goes to that student only", scoreMail.length >= 1 && scoreBcc.length === 1 && scoreBcc[0] === A.email, scoreBcc.join(","));
+  const scoreMails = await waitMail('subject:"Your score in Essay Quiz was updated"');
+  // Each student gets their own email; find the one addressed to Aquino.
+  let scoreMail = [];
+  let scoreBcc = [];
+  for (const m of scoreMails) {
+    const bcc = await mailBcc(m.ID);
+    if (bcc.includes(A.email)) { scoreMail = [m]; scoreBcc = bcc; break; }
+  }
+  ok("The email goes to that student only", scoreMail.length === 1 && scoreBcc.length === 1 && scoreBcc[0] === A.email, scoreMails.length + " score emails");
   const scoreText = scoreMail.length ? ((await (await fetch(`${MAILPIT}/api/v1/message/${scoreMail[0].ID}`)).json()).Text ?? "") : "";
   ok("It says how the score changed (all changes since the last email: 1 → 5 / 5)", /1 → 5 \/ 5/.test(scoreText) && /checked or adjusted/.test(scoreText), scoreText.replace(/\s+/g, " ").slice(0, 160));
   const scoreRun2 = await (await fetch(`${BASE}/api/cron/reminders`, { headers: { authorization: `Bearer ${CRON_SECRET}` } })).json();
