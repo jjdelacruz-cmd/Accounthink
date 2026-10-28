@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { BackLink } from "@/components/ui";
 import { CheckAnswersView } from "@/components/CheckAnswersView";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -24,9 +24,7 @@ export default async function CheckerExamPage({
 
   return (
     <AppShell profile={profile}>
-      <Link href="/checker" className="text-sm font-medium text-emerald-700">
-        ← {exam.course_code} · {exam.title}
-      </Link>
+      <BackLink href="/checker">{exam.course_code} · {exam.title}</BackLink>
       <CheckAnswersView
         examId={examId}
         courseId=""

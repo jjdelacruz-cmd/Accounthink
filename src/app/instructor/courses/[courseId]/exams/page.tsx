@@ -4,7 +4,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
 import { CourseNav } from "@/components/CourseNav";
 import { ExamStatusBadge } from "@/components/ExamStatusBadge";
-import { Card, Field } from "@/components/ui";
+import { Card, EmptyState, Field, SectionTitle, SelectField } from "@/components/ui";
 import { getOwnedCourse } from "@/lib/courses";
 import { KIND_LABEL } from "@/lib/exams";
 import { formatManila } from "@/lib/time";
@@ -39,34 +39,35 @@ export default async function ExamsPage({ params }: { params: Promise<{ courseId
       <CourseNav course={course} active="exams" />
 
       <Card>
-        <h2 className="mb-3 font-semibold">New exam</h2>
+        <SectionTitle className="mb-3">New exam</SectionTitle>
         <ActionForm action={createExam} submitLabel="Create exam" pendingLabel="Creating…">
           <input type="hidden" name="course_id" value={courseId} />
           <Field label="Title" name="title" placeholder="e.g. Quiz 1 — Audit evidence" required />
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">Type</span>
-            <select name="kind" className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-3">
-              {Object.entries(KIND_LABEL).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-          </label>
+          <SelectField label="Type" name="kind">
+            {Object.entries(KIND_LABEL).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </SelectField>
         </ActionForm>
       </Card>
 
-      {exams.length === 0 && <p className="text-sm text-slate-600">No exams yet.</p>}
+      {exams.length === 0 && (
+        <EmptyState icon="clipboard" title="No exams yet">
+          Create your first exam above, then add questions from your item bank.
+        </EmptyState>
+      )}
 
       {exams.map((e) => (
-        <Link key={e.id} href={`/instructor/courses/${courseId}/exams/${e.id}`} className="block">
-          <Card className="space-y-1 hover:border-emerald-300">
+        <Link key={e.id} href={`/instructor/courses/${courseId}/exams/${e.id}`} className="block rounded-card">
+          <Card className="space-y-1 hover:border-brand-300 hover:shadow-raised">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">{KIND_LABEL[e.kind] ?? e.kind}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-600">{KIND_LABEL[e.kind] ?? e.kind}</p>
                 <p className="font-semibold">{e.title}</p>
               </div>
               <ExamStatusBadge status={e.status} />
             </div>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-ink-600">
               {e.exam_items[0]?.count ?? 0} items
               {e.time_limit_minutes ? ` · ${e.time_limit_minutes} min` : ""}
               {e.exam_sections.length
@@ -74,7 +75,7 @@ export default async function ExamsPage({ params }: { params: Promise<{ courseId
                 : " · no sections"}
             </p>
             {(e.opens_at || e.closes_at) && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-600">
                 {formatManila(e.opens_at)} → {formatManila(e.closes_at)}
               </p>
             )}

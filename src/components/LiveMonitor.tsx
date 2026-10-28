@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { endAttempt, extendAttempt, getAccessCode, getAttemptEvents, getMonitor } from "@/app/actions/monitor";
 import { ExamStatusBadge } from "@/components/ExamStatusBadge";
+import { Badge, Notice, PageTitle, inputClass } from "@/components/ui";
 import { END_REASON_LABEL } from "@/lib/attempts";
 import {
   EVENT_LABEL,
@@ -66,25 +67,25 @@ function AccessCode({ examId }: { examId: string }) {
 
   return (
     <>
-      <div className="rounded-2xl bg-slate-900 p-4 text-center text-white">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Access code</p>
+      <div className="rounded-card bg-ink-900 p-5 text-center text-white shadow-raised">
+        <p className="text-xs font-semibold uppercase tracking-widest text-ink-400">Access code</p>
         <p className="font-mono text-5xl font-bold tracking-widest tabular-nums">{digits}</p>
-        <div className="mx-auto mt-2 h-1.5 max-w-48 overflow-hidden rounded-full bg-slate-700">
-          <div className="h-full bg-emerald-400 transition-all" style={{ width: `${(left / 60) * 100}%` }} />
+        <div className="mx-auto mt-2 h-1.5 max-w-48 overflow-hidden rounded-full bg-ink-700">
+          <div className="h-full bg-brand-400 transition-all" style={{ width: `${(left / 60) * 100}%` }} />
         </div>
-        <p className="mt-1 text-xs text-slate-400">Changes in {left}s</p>
-        <button onClick={() => setBig(true)} className="mt-2 text-sm font-semibold text-emerald-300 underline">
+        <p className="mt-1 text-xs text-ink-400">Changes in {left}s</p>
+        <button onClick={() => setBig(true)} className="mt-2 min-h-10 px-2 text-sm font-semibold text-brand-300 underline">
           Show full screen for the class
         </button>
       </div>
       {big && (
         <button
           onClick={() => setBig(false)}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 text-white"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-ink-900 text-white"
         >
-          <p className="text-2xl font-semibold uppercase tracking-widest text-slate-400">Access code</p>
+          <p className="text-2xl font-semibold uppercase tracking-widest text-ink-400">Access code</p>
           <p className="font-mono text-[22vw] font-bold leading-none tabular-nums">{digits}</p>
-          <p className="mt-4 text-xl text-slate-400">Changes in {left}s · tap to close</p>
+          <p className="mt-4 text-xl text-ink-400">Changes in {left}s · tap to close</p>
         </button>
       )}
     </>
@@ -135,39 +136,37 @@ function StudentRow({
   };
 
   return (
-    <li className={`rounded-xl border bg-white p-3 ${isFlagged(s) ? "border-amber-300" : "border-slate-200"}`}>
+    <li className={`card !p-3 ${isFlagged(s) ? "!border-warning-300 !bg-warning-50/50" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 truncate font-semibold">
             {status === "in_progress" && (
               <span
-                className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${online ? "bg-emerald-500" : "bg-slate-300"}`}
+                className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${online ? "bg-brand-500" : "bg-ink-300"}`}
                 title={online ? "Online" : "Not responding"}
               />
             )}
             {s.full_name || "—"}
           </p>
-          <p className="truncate text-xs text-slate-500">
+          <p className="truncate text-xs text-ink-600">
             {[s.student_no, s.section, a?.device].filter(Boolean).join(" · ")}
           </p>
         </div>
         <div className="shrink-0 text-right">
           {status === "not_started" && (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-              Not started
-            </span>
+            <Badge>Not started</Badge>
           )}
           {status === "in_progress" && (
             <span
-              className={`font-mono text-sm font-bold tabular-nums ${leftMs < 5 * 60000 ? "text-red-600" : "text-slate-800"}`}
+              className={`font-mono text-base font-bold tabular-nums ${leftMs < 5 * 60000 ? "text-danger-700" : "text-ink-800"}`}
             >
               {clock(leftMs)}
             </span>
           )}
           {status === "submitted" && a && (
-            <span className="text-sm font-bold">
+            <span className="text-sm font-bold tabular-nums">
               {Number(a.score)} / {Number(a.max_score)}
-              {a.pending > 0 && <span className="block text-xs font-semibold text-amber-700">{a.pending} to check</span>}
+              {a.pending > 0 && <span className="block text-xs font-semibold text-warning-800">{a.pending} to check</span>}
             </span>
           )}
         </div>
@@ -175,29 +174,29 @@ function StudentRow({
 
       {a && (
         <>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink-100">
             <div
-              className={`h-full ${status === "submitted" ? "bg-slate-400" : "bg-emerald-600"}`}
+              className={`h-full ${status === "submitted" ? "bg-ink-400" : "bg-brand-600"}`}
               style={{ width: `${total ? (a.answered / total) * 100 : 0}%` }}
             />
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1 text-xs">
-            <span className="text-slate-600">
+            <span className="text-ink-600">
               {a.answered}/{total} answered
             </span>
             {a.leaves > 0 && (
-              <span className="rounded-md bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-900">
+              <span className="badge badge-warning">
                 Left {a.leaves}× · {formatDuration(a.away_seconds)} away
               </span>
             )}
             {a.copy_paste > 0 && (
-              <span className="rounded-md bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-900">
+              <span className="badge badge-warning">
                 Copy/paste ×{a.copy_paste}
               </span>
             )}
             {a.camera > 0 && (
               <span
-                className="rounded-md bg-red-100 px-1.5 py-0.5 font-semibold text-red-800"
+                className="badge badge-danger"
                 title={Object.entries(a.camera_kinds ?? {})
                   .map(([k, n]) => `${EVENT_LABEL[k] ?? k} ×${n}`)
                   .join(", ")}
@@ -207,12 +206,12 @@ function StudentRow({
               </span>
             )}
             {a.device_flags > 0 && (
-              <span className="rounded-md bg-red-100 px-1.5 py-0.5 font-semibold text-red-800">
+              <span className="badge badge-danger">
                 Device/tab ×{a.device_flags}
               </span>
             )}
             {a.submitted_at && a.end_reason && a.end_reason !== "student" && (
-              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-700">
+              <span className="badge badge-neutral">
                 {END_REASON_LABEL[a.end_reason] ?? a.end_reason}
               </span>
             )}
@@ -224,7 +223,7 @@ function StudentRow({
                 <button
                   disabled={busy}
                   onClick={() => act(() => extendAttempt(a.id, 5))}
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+                  className="btn btn-secondary btn-sm"
                 >
                   +5 min
                 </button>
@@ -235,24 +234,24 @@ function StudentRow({
                       act(() => endAttempt(a.id));
                     }
                   }}
-                  className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-700 disabled:opacity-50"
+                  className="btn btn-outline-danger btn-sm"
                 >
                   End now
                 </button>
               </>
             )}
-            <button onClick={toggleLog} className="px-1 py-1.5 text-sm font-medium text-slate-600 underline">
+            <button onClick={toggleLog} className="btn btn-quiet btn-sm underline">
               {open ? "Hide log" : "Activity log"}
             </button>
           </div>
 
           {open && (
-            <ul className="mt-2 max-h-60 space-y-1 overflow-y-auto rounded-lg bg-slate-50 p-2 text-xs">
-              {!events && <li className="text-slate-500">Loading…</li>}
-              {events?.length === 0 && <li className="text-slate-500">No activity recorded.</li>}
+            <ul className="mt-2 max-h-60 space-y-1 overflow-y-auto rounded-chip bg-ink-50 p-2 text-xs">
+              {!events && <li className="text-ink-600">Loading…</li>}
+              {events?.length === 0 && <li className="text-ink-600">No activity recorded.</li>}
               {events?.map((e) => (
                 <li key={e.id} className="flex gap-2">
-                  <span className="shrink-0 tabular-nums text-slate-500">
+                  <span className="shrink-0 tabular-nums text-ink-600">
                     {new Date(e.created_at).toLocaleTimeString("en-PH", {
                       timeZone: "Asia/Manila",
                       hour: "numeric",
@@ -321,8 +320,8 @@ export function LiveMonitor({ examId }: { examId: string }) {
     };
   }, [refresh]);
 
-  if (error) return <p className="rounded-xl bg-red-50 p-3 text-red-800">{error}</p>;
-  if (!data) return <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />;
+  if (error) return <Notice kind="error">{error}</Notice>;
+  if (!data) return <div className="h-40 animate-pulse rounded-card bg-ink-200" />;
 
   const students = data.students;
   const counts = {
@@ -351,43 +350,35 @@ export function LiveMonitor({ examId }: { examId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase text-slate-500">Live monitor</p>
-          <h1 className="text-xl font-bold">{data.exam.title}</h1>
-          <p className="text-xs text-slate-500">
-            Updates every 5 seconds{stale && <span className="font-semibold text-amber-700"> · connection lost, retrying</span>}
-          </p>
-        </div>
-        <ExamStatusBadge status={data.exam.status} />
+      <div className="space-y-1">
+        <PageTitle eyebrow="Live monitor" actions={<ExamStatusBadge status={data.exam.status} />}>
+          {data.exam.title}
+        </PageTitle>
+        <p className="text-xs text-ink-600">
+          Updates every 5 seconds{stale && <span className="font-semibold text-warning-800"> · connection lost, retrying</span>}
+        </p>
       </div>
 
       {data.exam.require_access_code && data.exam.status === "published" && <AccessCode examId={examId} />}
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-xl bg-white p-2 shadow-sm">
-          <p className="text-2xl font-bold">{counts.in_progress}</p>
-          <p className="text-xs text-slate-500">Taking</p>
+        <div className="card !p-3">
+          <p className="text-2xl font-bold tabular-nums">{counts.in_progress}</p>
+          <p className="text-xs font-semibold text-ink-600">Taking</p>
         </div>
-        <div className="rounded-xl bg-white p-2 shadow-sm">
-          <p className="text-2xl font-bold">{counts.submitted}</p>
-          <p className="text-xs text-slate-500">Submitted</p>
+        <div className="card !p-3">
+          <p className="text-2xl font-bold tabular-nums">{counts.submitted}</p>
+          <p className="text-xs font-semibold text-ink-600">Submitted</p>
         </div>
-        <div className="rounded-xl bg-white p-2 shadow-sm">
-          <p className={`text-2xl font-bold ${counts.flagged ? "text-amber-700" : ""}`}>{counts.flagged}</p>
-          <p className="text-xs text-slate-500">Flagged</p>
+        <div className={`card !p-3 ${counts.flagged ? "!border-warning-300 !bg-warning-50" : ""}`}>
+          <p className={`text-2xl font-bold tabular-nums ${counts.flagged ? "text-warning-800" : ""}`}>{counts.flagged}</p>
+          <p className="text-xs font-semibold text-ink-600">Flagged</p>
         </div>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto rounded-xl bg-slate-200/70 p-1">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {tabs.map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold ${
-              filter === key ? "bg-white text-emerald-800 shadow-sm" : "text-slate-600"
-            }`}
-          >
+          <button key={key} onClick={() => setFilter(key)} aria-pressed={filter === key} className="pill shrink-0">
             {label} {counts[key]}
           </button>
         ))}
@@ -397,13 +388,14 @@ export function LiveMonitor({ examId }: { examId: string }) {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search name or student no."
-        className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2"
+        className={inputClass}
+        aria-label="Search students"
       />
 
       {shown.length === 0 ? (
-        <p className="text-center text-sm text-slate-500">No students here.</p>
+        <p className="text-center text-sm text-ink-600">No students here.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {shown.map((s) => (
             <StudentRow key={s.student_id} s={s} total={data.exam.total_items} now={now} onChanged={refresh} />
           ))}

@@ -3,6 +3,7 @@
 import type { FaceLandmarker } from "@mediapipe/tasks-vision";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { classify, WarningTracker, type Look, type Pose } from "@/lib/gaze";
+import { Icon } from "@/components/icons";
 
 // Everything here runs on the student's phone. The camera picture is never saved or sent;
 // only warnings (kind + how many seconds) go to the server.
@@ -197,8 +198,8 @@ function Preview({
       playsInline
       autoPlay
       aria-label="Your camera"
-      className={`-scale-x-100 rounded-xl border-4 bg-slate-900 object-cover ${
-        tone === "ok" ? "border-emerald-500" : tone === "warn" ? "border-red-500" : "border-slate-300"
+      className={`-scale-x-100 rounded-control border-4 bg-ink-900 object-cover ${
+        tone === "ok" ? "border-brand-500" : tone === "warn" ? "border-danger-500" : "border-ink-300"
       } ${className}`}
     />
   );
@@ -223,31 +224,38 @@ export function CameraGate({ children }: { children: ReactNode }) {
   // One <video> element throughout, so the stream stays attached when the check passes.
   return (
     <div className="space-y-3">
-      <div className={`space-y-3 rounded-xl p-3 ${passed ? "bg-emerald-50" : "border border-slate-200"}`}>
-        {!passed && <p className="text-sm font-semibold">Camera check</p>}
+      <div className={`space-y-3 rounded-control p-3 ${passed ? "bg-brand-50" : "border border-ink-300 bg-ink-50"}`}>
+        {!passed && (
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <Icon name="camera" size={18} /> Camera check
+          </p>
+        )}
         <div className="flex items-center gap-3">
           <Preview
             videoRef={cam.videoRef}
             tone={cam.status === "running" ? (cam.look === "ok" ? "ok" : "warn") : "idle"}
             className={`shrink-0 ${passed ? "h-16 w-12" : "h-32 w-24"}`}
           />
-          <div className="space-y-2 text-sm text-slate-700">
+          <div className="space-y-2 text-sm text-ink-700">
             {passed && (
-              <p className="font-semibold text-emerald-800">Camera ready ✓ Keep your face in view during the exam.</p>
+              <p className="font-semibold text-brand-800">
+                <Icon name="check" size={16} className="mr-1 inline" />
+                Camera ready. Keep your face in view during the exam.
+              </p>
             )}
             {cam.status === "idle" && <p>Tap the button and allow the camera when your phone asks.</p>}
             {cam.status === "starting" && <p>Starting the camera… (the first time can take a few seconds)</p>}
             {cam.status === "running" && !passed && (
               <p>{cam.look === "ok" ? "Hold still and look at the middle of the screen…" : LOOK_MESSAGE[cam.look]}</p>
             )}
-            {failed && <p className="text-red-700">{blockedText(cam.status)}</p>}
+            {failed && <p className="text-danger-700">{blockedText(cam.status)}</p>}
           </div>
         </div>
         {(cam.status === "idle" || (failed && cam.status !== "unsupported")) && (
           <button
             type="button"
             onClick={cam.start}
-            className="min-h-12 w-full rounded-xl border-2 border-emerald-700 font-semibold text-emerald-800"
+            className="btn btn-secondary btn-block !border-2 !border-brand-700 !text-brand-800"
           >
             {cam.status === "idle" ? "Turn on camera" : "Try again"}
           </button>
@@ -299,10 +307,10 @@ export function CameraWatch({
         <Preview
           videoRef={cam.videoRef}
           tone={cam.status !== "running" ? "idle" : cam.warning ? "warn" : "ok"}
-          className="h-20 w-[3.75rem] shadow-lg"
+          className="h-20 w-[3.75rem] shadow-pop"
         />
         {count > 0 && (
-          <span className="rounded-full bg-slate-900/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+          <span className="rounded-full bg-ink-900/85 px-2 py-0.5 text-[11px] font-semibold text-white">
             {count} warning{count === 1 ? "" : "s"}
           </span>
         )}
@@ -311,19 +319,22 @@ export function CameraWatch({
       {cam.warning && !blocked && (
         // Above the bottom buttons, so the question stays readable.
         <div role="alert" className="fixed inset-x-0 bottom-20 z-30 mx-auto max-w-2xl px-4">
-          <div className="rounded-xl border-2 border-red-500 bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-lg">
-            ⚠ {LOOK_MESSAGE[cam.warning]} This is recorded for your instructor.
+          <div className="flex items-start gap-2 rounded-control bg-danger-600 px-3 py-2.5 text-sm font-semibold text-white shadow-pop">
+            <Icon name="alert" size={18} className="mt-0.5" />
+            <span>
+              {LOOK_MESSAGE[cam.warning]} This is recorded for your instructor.
+            </span>
           </div>
         </div>
       )}
 
       {blocked && (
-        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-slate-900/95 px-6 text-center text-white">
-          <p className="text-lg font-semibold">Camera needed</p>
-          <p className="max-w-xs text-sm text-slate-200">{blockedText(cam.status)}</p>
-          <p className="max-w-xs text-xs text-slate-400">Your timer keeps running and your answers are saved.</p>
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-ink-900/95 px-6 text-center text-white">
+          <p className="text-heading font-semibold">Camera needed</p>
+          <p className="max-w-xs text-sm text-ink-200">{blockedText(cam.status)}</p>
+          <p className="max-w-xs text-xs text-ink-400">Your timer keeps running and your answers are saved.</p>
           {cam.status !== "unsupported" && (
-            <button onClick={start} className="min-h-12 rounded-xl bg-white px-6 font-semibold text-slate-900">
+            <button onClick={start} className="btn btn-secondary px-6">
               Turn camera back on
             </button>
           )}

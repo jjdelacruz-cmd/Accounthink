@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ScoreEditor } from "@/components/ScoreEditor";
-import { Card } from "@/components/ui";
+import { Badge, Card, EmptyState, Notice, PageTitle } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { ITEM_TYPE_LABEL, type Answer, type ItemType } from "@/lib/items";
 import { keyText } from "@/lib/results";
@@ -42,7 +42,7 @@ type Show = keyof typeof SHOW;
 function AnswerText({ type, answer }: { type: ItemType; answer: CheckAnswer["answer"] }) {
   const parts =
     type === "enumeration" ? (answer?.items ?? []).filter((x) => x.trim()) : answer?.text?.trim() ? [answer.text] : [];
-  if (!parts.length) return <p className="text-sm italic text-slate-500">Left blank</p>;
+  if (!parts.length) return <p className="text-sm italic text-ink-600">Left blank</p>;
   if (type === "enumeration")
     return (
       <ol className="list-decimal pl-5 text-sm">
@@ -51,7 +51,7 @@ function AnswerText({ type, answer }: { type: ItemType; answer: CheckAnswer["ans
         ))}
       </ol>
     );
-  return <p className="whitespace-pre-line text-sm leading-relaxed">{parts[0]}</p>;
+  return <p className="whitespace-pre-line rounded-chip bg-ink-50 px-3 py-2 text-base leading-relaxed text-ink-900">{parts[0]}</p>;
 }
 
 /** The whole "check answers" screen. Used by the instructor and by assigned checkers. */
@@ -94,9 +94,9 @@ export async function CheckAnswersView({
 
   return (
     <>
-      <div>
-        <h1 className="text-xl font-bold">Check answers</h1>
-        <p className="text-sm text-slate-600">
+      <div className="space-y-1">
+        <PageTitle>Check answers</PageTitle>
+        <p className="text-sm text-ink-600">
           {totalPending > 0
             ? `${totalPending} answer${totalPending === 1 ? "" : "s"} waiting to be checked.`
             : "Nothing waiting. You can still change any score below."}{" "}
@@ -104,31 +104,30 @@ export async function CheckAnswersView({
         </p>
       </div>
 
-      {error && <p className="rounded-xl bg-red-50 p-3 text-red-800">{error.message}</p>}
+      {error && <Notice kind="error">{error.message}</Notice>}
       {!error && summary.length === 0 && (
-        <Card>
-          <p className="text-sm text-slate-600">
-            This exam has only multiple-choice questions, so there is nothing to check by hand.
-          </p>
-        </Card>
+        <EmptyState icon="check" title="Nothing to check by hand">
+          This exam has only multiple-choice questions, so there is nothing to check by hand.
+        </EmptyState>
       )}
 
       {summary.length > 0 && (
-        <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Questions">
+        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="Questions">
           {summary.map((s) => {
             const active = s.item_id === current?.item_id;
             return (
               <Link
                 key={s.item_id}
                 href={`${base}?item=${s.item_id}`}
-                className={`shrink-0 rounded-xl border px-3 py-2 text-left text-xs ${
-                  active ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-white"
+                aria-current={active ? "page" : undefined}
+                className={`shrink-0 rounded-control border px-3 py-2 text-left text-xs ${
+                  active ? "border-brand-600 bg-brand-50 ring-1 ring-brand-600" : "border-ink-300 bg-white hover:bg-ink-50"
                 }`}
               >
                 <span className="block font-bold">
                   Q{s.position} · {ITEM_TYPE_LABEL[s.type]}
                 </span>
-                <span className={Number(s.pending) > 0 ? "font-semibold text-amber-700" : "text-slate-500"}>
+                <span className={Number(s.pending) > 0 ? "font-semibold text-warning-800" : "text-ink-600"}>
                   {Number(s.pending) > 0 ? `${s.pending} to check` : `${s.answered} answered`}
                 </span>
               </Link>
@@ -140,12 +139,12 @@ export async function CheckAnswersView({
       {detail && current && (
         <>
           <Card className="space-y-2">
-            <p className="text-xs font-semibold text-slate-500">
+            <p className="text-xs font-semibold text-ink-600">
               Question {current.position} · {ITEM_TYPE_LABEL[detail.item.type]} · {Number(detail.item.points)} pt
               {Number(detail.item.points) === 1 ? "" : "s"}
             </p>
-            <p className="whitespace-pre-line">{detail.item.stem}</p>
-            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+            <p className="whitespace-pre-line text-base text-ink-900">{detail.item.stem}</p>
+            <p className="rounded-control bg-brand-50 px-3 py-2 text-sm text-brand-900">
               <span className="font-semibold">{detail.item.type === "essay" ? "Your guide:" : "Key:"}</span>{" "}
               {detail.item.type === "essay"
                 ? (detail.item.key as { guide?: string } | null)?.guide || "no guide written"
@@ -153,14 +152,13 @@ export async function CheckAnswersView({
             </p>
           </Card>
 
-          <div className="flex gap-1 rounded-xl bg-slate-200/70 p-1">
+          <div className="tabs grid-cols-3">
             {(Object.keys(SHOW) as Show[]).map((k) => (
               <Link
                 key={k}
                 href={`${base}?item=${current.item_id}&show=${k}`}
-                className={`flex-1 rounded-lg px-2 py-2 text-center text-xs font-semibold ${
-                  show === k ? "bg-white text-emerald-800 shadow-sm" : "text-slate-600"
-                }`}
+                aria-current={show === k ? "page" : undefined}
+                className="tab text-center text-xs"
               >
                 {SHOW[k]}
               </Link>
@@ -168,44 +166,45 @@ export async function CheckAnswersView({
           </div>
 
           {shown.length === 0 && (
-            <p className="text-center text-sm text-slate-600">
+            <p className="text-center text-sm text-ink-600">
               {detail.answers.length === 0 ? "No one has submitted yet." : "No answers in this view."}
             </p>
           )}
 
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {shown.map((a) => (
-              <li key={a.attempt_id} className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+              <li key={a.attempt_id} className="card space-y-3 !p-3 sm:!p-4">
                 <div className="flex items-start justify-between gap-2">
                   {linkStudents ? (
                     <Link
                       href={`/instructor/courses/${courseId}/exams/${examId}/results/${a.attempt_id}`}
-                      className="font-semibold text-slate-900"
+                      className="font-semibold text-ink-900"
                     >
                       {a.full_name || "—"}
-                      {a.student_no && <span className="font-normal text-slate-500"> · {a.student_no}</span>}
+                      {a.student_no && <span className="font-normal text-ink-600"> · {a.student_no}</span>}
                     </Link>
                   ) : (
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-ink-900">
                       {a.full_name || "—"}
-                      {a.student_no && <span className="font-normal text-slate-500"> · {a.student_no}</span>}
+                      {a.student_no && <span className="font-normal text-ink-600"> · {a.student_no}</span>}
                     </span>
                   )}
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                  <Badge
+                    tone={
                       a.points_awarded === null
-                        ? "bg-amber-100 text-amber-900"
+                        ? "warning"
                         : Number(a.points_awarded) >= Number(detail!.item.points)
-                          ? "bg-emerald-100 text-emerald-800"
+                          ? "success"
                           : Number(a.points_awarded) > 0
-                            ? "bg-amber-100 text-amber-900"
-                            : "bg-red-100 text-red-800"
-                    }`}
+                            ? "warning"
+                            : "danger"
+                    }
+                    className="shrink-0 tabular-nums"
                   >
                     {a.points_awarded === null
                       ? "To check"
                       : `${Number(a.points_awarded)}/${Number(detail!.item.points)}`}
-                  </span>
+                  </Badge>
                 </div>
                 <AnswerText type={detail!.item.type} answer={a.answer} />
                 <ScoreEditor

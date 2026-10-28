@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { BackLink, PageTitle } from "@/components/ui";
 import { ItemImporter } from "@/components/ItemImporter";
 import { getOwnedCourse } from "@/lib/courses";
 import { getTopics } from "../topics";
@@ -15,10 +15,8 @@ export default async function ImportItemsPage({ params }: { params: Promise<{ co
 
   return (
     <AppShell profile={profile}>
-      <Link href={`/instructor/courses/${courseId}/items`} className="text-sm font-medium text-emerald-700">
-        ← {course.code} item bank
-      </Link>
-      <h1 className="text-xl font-bold">Import questions</h1>
+      <BackLink href={`/instructor/courses/${courseId}/items`}>{course.code} item bank</BackLink>
+      <PageTitle>Import questions</PageTitle>
       <ItemImporter courseId={courseId} courseCode={course.code} existingStems={existingStems} topics={topics} />
     </AppShell>
   );

@@ -1,16 +1,170 @@
 @import "tailwindcss";
 
-body {
-  background: #f8fafc;
-  color: #0f172a;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  -webkit-tap-highlight-color: transparent;
+/* ==========================================================================
+   Accounthink design system
+   --------------------------------------------------------------------------
+   Everything visual is defined here once:
+   - @theme            : the tokens (colour, radius, shadow, type). Components use
+                         the generated utilities (bg-brand-700, rounded-card, text-title …).
+   - @layer base       : element defaults (page background, focus ring, touch rules).
+   - @layer components : the few multi-property building blocks (.btn, .input, .card,
+                         .badge, .tab …) that ui.tsx wraps in React primitives.
+   Rhythm: 4px grid. Page gutter 16px, space between blocks 20px (space-y-5), card padding
+   16px (20px from "sm"), form fields 16px apart, tight groups 8px.
+   ========================================================================== */
+
+@theme {
+  /* Only the colours below exist: a stray default colour (bg-gray-100 …) compiles to nothing. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Brand: the OLFU emerald, #047857 = brand-700 (the primary colour, white text on it is 5.5:1). */
+  --color-brand-50: #ecfdf5;
+  --color-brand-100: #d1fae5;
+  --color-brand-200: #a7f3d0;
+  --color-brand-300: #6ee7b7;
+  --color-brand-400: #34d399;
+  --color-brand-500: #10b981;
+  --color-brand-600: #059669;
+  --color-brand-700: #047857;
+  --color-brand-800: #065f46;
+  --color-brand-900: #064e3b;
+  --color-brand-950: #022c22;
+
+  /* Neutrals ("ink"): a faintly green-tinted grey. 500 and darker pass 4.5:1 on white AND on ink-50,
+     so ink-500 is the lightest colour allowed for text. ink-300/400 are for borders and fills only. */
+  --color-ink-50: #f5f8f7;
+  --color-ink-100: #eaf0ee;
+  --color-ink-200: #dbe3e0;
+  --color-ink-300: #bcc8c4;
+  --color-ink-400: #8a9893;
+  --color-ink-500: #5a6863;
+  --color-ink-600: #45524e;
+  --color-ink-700: #323d3a;
+  --color-ink-800: #202927;
+  --color-ink-900: #111816;
+  --color-ink-950: #0a0f0e;
+
+  /* Semantic colours. success = "correct / done", warning = "needs attention", danger = "wrong / destructive",
+     info = "neutral heads-up". 50 = tint, 200 = border, 600 = solid, 700-900 = text on a tint. */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+
+  --color-info-50: #f0f9ff;
+  --color-info-100: #e0f2fe;
+  --color-info-200: #bae6fd;
+  --color-info-300: #7dd3fc;
+  --color-info-600: #0284c7;
+  --color-info-700: #0369a1;
+  --color-info-800: #075985;
+  --color-info-900: #0c4a6e;
+
+  /* Radius scale: card (panels), control (buttons, inputs, rows), chip (small buttons, tabs, tags). */
+  --radius-*: initial;
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --radius-chip: 0.5rem;
+
+  /* Shadow scale: card (resting), raised (hover / sticky), pop (menus, toasts). */
+  --shadow-*: initial;
+  --shadow-card: 0 1px 2px rgb(17 24 22 / 0.05), 0 1px 3px rgb(17 24 22 / 0.06);
+  --shadow-raised: 0 2px 4px rgb(17 24 22 / 0.06), 0 4px 12px rgb(17 24 22 / 0.08);
+  --shadow-pop: 0 8px 24px rgb(17 24 22 / 0.18);
+
+  /* Type: system fonts only (works offline, no font download). */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Scale: text-xs 12 = meta/captions (nothing smaller), text-sm 14 = dense UI and secondary text,
+     text-base 16 = body, text-heading 18 = section title, text-title 24 = page title,
+     text-question 20 = exam question. Numbers: add tabular-nums. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.6rem;
+  --text-heading: 1.125rem;
+  --text-heading--line-height: 1.5rem;
+  --text-question: 1.25rem;
+  --text-question--line-height: 1.85rem;
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.9rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1;
 }
 
-/* Touch: no double-tap zoom delay, a visible press state, and a comfortable minimum tap size.
-   In the base layer so any size set on a specific button (min-h-12, h-11 …) still wins. */
 @layer base {
-  a, button, summary, label, select, input[type="checkbox"], input[type="radio"] {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-ink-50);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+    overflow-wrap: break-word;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  /* One visible focus ring for keyboard users everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+  header :focus-visible {
+    outline-color: #fff;
+  }
+  ::selection {
+    background: var(--color-brand-200);
+  }
+
+  /* Touch: no double-tap zoom delay, a visible press state, and a comfortable minimum tap size.
+     In the base layer so any size set on a specific button (min-h-12, h-11 …) still wins. */
+  a,
+  button,
+  summary,
+  label,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
     touch-action: manipulation;
   }
   button:not(:disabled):active,
@@ -26,16 +180,395 @@ body {
   }
   /* Links that look like buttons (bordered / filled and rounded) */
   main a[class*="rounded"][class*="border"],
-  main a[class*="rounded"][class*="bg-emerald"],
-  main a[class*="rounded"][class*="bg-slate-9"] {
+  main a[class*="rounded"][class*="bg-brand"],
+  main a[class*="rounded"][class*="bg-ink-9"] {
     min-height: 2.5rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
+  /* Checkboxes and radios: bigger than the browser default, in the brand colour. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-brand-700);
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  summary {
+    cursor: pointer;
+  }
+  details > summary::marker {
+    color: var(--color-ink-500);
+  }
+  table {
+    border-collapse: collapse;
+  }
 }
+
+@layer components {
+  /* ---- Cards ---- */
+  .card {
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-ink-200);
+    background: #fff;
+    padding: 1rem;
+    box-shadow: var(--shadow-card);
+  }
+  @media (min-width: 40rem) {
+    .card {
+      padding: 1.25rem;
+    }
+  }
+  .card-flush {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* ---- Buttons ---- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-control);
+    border: 1px solid transparent;
+    font-size: var(--text-base);
+    line-height: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+  }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .btn-primary {
+    background: var(--color-brand-700);
+    color: #fff;
+    box-shadow: var(--shadow-card);
+  }
+  .btn-primary:hover {
+    background: var(--color-brand-800);
+  }
+  .btn-secondary {
+    background: #fff;
+    color: var(--color-ink-800);
+    border-color: var(--color-ink-300);
+  }
+  .btn-secondary:hover {
+    background: var(--color-ink-50);
+    border-color: var(--color-ink-400);
+  }
+  .btn-danger {
+    background: var(--color-danger-600);
+    color: #fff;
+  }
+  .btn-danger:hover {
+    background: var(--color-danger-700);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-brand-800);
+  }
+  .btn-ghost:hover {
+    background: var(--color-brand-50);
+  }
+  .btn-sm {
+    min-height: 2.5rem;
+    padding: 0.375rem 0.75rem;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-chip);
+  }
+  .btn-lg {
+    min-height: 3.5rem;
+    padding: 0.75rem 1.25rem;
+    font-size: var(--text-heading);
+  }
+  .btn-block {
+    display: flex;
+    width: 100%;
+  }
+
+  /* ---- Form controls ---- */
+  .input {
+    display: block;
+    width: 100%;
+    min-height: 3rem;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-ink-400);
+    background: #fff;
+    padding: 0.625rem 0.875rem;
+    font-size: var(--text-base);
+    line-height: 1.5rem;
+    color: var(--color-ink-900);
+  }
+  .input::placeholder {
+    color: var(--color-ink-500);
+    opacity: 1;
+  }
+  .input:hover {
+    border-color: var(--color-ink-500);
+  }
+  .input:focus {
+    border-color: var(--color-brand-600);
+  }
+  .input:focus-visible {
+    outline-offset: 0;
+    outline-color: color-mix(in srgb, var(--color-brand-600) 45%, transparent);
+    outline-width: 3px;
+  }
+  .input:disabled {
+    background: var(--color-ink-100);
+    color: var(--color-ink-500);
+    cursor: not-allowed;
+  }
+  .input[aria-invalid="true"] {
+    border-color: var(--color-danger-600);
+  }
+  select.input {
+    padding-right: 2rem;
+  }
+  textarea.input {
+    min-height: 6rem;
+  }
+  .input-sm {
+    min-height: 2.5rem;
+    padding: 0.375rem 0.625rem;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-chip);
+  }
+
+  /* ---- Badges, pills, chips ---- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    padding: 0.125rem 0.625rem;
+    font-size: var(--text-xs);
+    line-height: 1.125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-neutral {
+    background: var(--color-ink-100);
+    color: var(--color-ink-700);
+  }
+  .badge-brand,
+  .badge-success {
+    background: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
+  .badge-warning {
+    background: var(--color-warning-100);
+    color: var(--color-warning-900);
+  }
+  .badge-danger {
+    background: var(--color-danger-100);
+    color: var(--color-danger-800);
+  }
+  .badge-info {
+    background: var(--color-info-100);
+    color: var(--color-info-900);
+  }
+  /* Filter pill: a button or link that toggles a filter. */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    padding: 0.25rem 0.875rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-ink-300);
+    background: #fff;
+    color: var(--color-ink-700);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .pill:hover {
+    background: var(--color-ink-50);
+  }
+  .pill[aria-pressed="true"],
+  .pill[aria-current] {
+    background: var(--color-brand-700);
+    border-color: var(--color-brand-700);
+    color: #fff;
+  }
+
+  /* ---- Segmented tabs (course sections, Scores / Item analysis) ---- */
+  .tabs {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: var(--radius-control);
+    background: var(--color-ink-200);
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-chip);
+    color: var(--color-ink-700);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.1;
+    cursor: pointer;
+  }
+  .tab:hover {
+    background: rgb(255 255 255 / 0.6);
+  }
+  .tab[aria-current="page"],
+  .tab[aria-pressed="true"],
+  .tab[aria-selected="true"] {
+    background: #fff;
+    color: var(--color-brand-800);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ---- Tables ---- */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-ink-200);
+    background: #fff;
+    box-shadow: var(--shadow-card);
+    -webkit-overflow-scrolling: touch;
+  }
+  .table {
+    width: 100%;
+    font-size: var(--text-sm);
+  }
+  .table th {
+    background: var(--color-ink-100);
+    color: var(--color-ink-700);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-align: left;
+    padding: 0.625rem 0.75rem;
+    white-space: nowrap;
+  }
+  .table td {
+    padding: 0.625rem 0.75rem;
+    border-top: 1px solid var(--color-ink-100);
+    vertical-align: middle;
+  }
+  .table tbody tr:hover td {
+    background: var(--color-ink-50);
+  }
+
+  /* ---- List rows (bordered, divided list inside a card) ---- */
+  .list {
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-ink-200);
+    background: #fff;
+    overflow: hidden;
+  }
+  .list > li + li {
+    border-top: 1px solid var(--color-ink-100);
+  }
+  .row-link {
+    display: block;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-ink-200);
+    background: #fff;
+    padding: 0.75rem;
+  }
+  .row-link:hover {
+    border-color: var(--color-brand-300);
+    background: var(--color-brand-50);
+  }
+
+  /* ---- Notices ---- */
+  .notice {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    border-radius: var(--radius-control);
+    border: 1px solid;
+    padding: 0.625rem 0.875rem;
+    font-size: var(--text-sm);
+  }
+  .notice-error {
+    border-color: var(--color-danger-200);
+    background: var(--color-danger-50);
+    color: var(--color-danger-800);
+  }
+  .notice-ok {
+    border-color: var(--color-brand-200);
+    background: var(--color-brand-50);
+    color: var(--color-brand-900);
+  }
+  .notice-warn {
+    border-color: var(--color-warning-200);
+    background: var(--color-warning-50);
+    color: var(--color-warning-900);
+  }
+  .notice-info {
+    border-color: var(--color-info-200);
+    background: var(--color-info-50);
+    color: var(--color-info-900);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  button, a[class*="rounded"] {
-    transition: filter 80ms ease, background-color 120ms ease;
+  button,
+  a[class*="rounded"],
+  .btn,
+  .pill,
+  .tab,
+  .input,
+  .row-link {
+    transition:
+      filter 80ms ease,
+      background-color 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  /* Low-emphasis buttons for row actions (Archive, Remove …). */
+  .btn-quiet {
+    background: transparent;
+    color: var(--color-ink-700);
+  }
+  .btn-quiet:hover {
+    background: var(--color-ink-100);
+  }
+  .btn-quiet-danger {
+    background: transparent;
+    color: var(--color-danger-700);
+  }
+  .btn-quiet-danger:hover {
+    background: var(--color-danger-50);
+  }
+  .btn-outline-danger {
+    background: #fff;
+    color: var(--color-danger-700);
+    border-color: var(--color-danger-300);
+  }
+  .btn-outline-danger:hover {
+    background: var(--color-danger-50);
   }
 }

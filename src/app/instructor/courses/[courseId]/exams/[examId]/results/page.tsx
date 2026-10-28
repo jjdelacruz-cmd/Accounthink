@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { BackLink, Notice } from "@/components/ui";
 import { ResultsView } from "@/components/ResultsView";
 import { getOwnedCourse } from "@/lib/courses";
 import type { MonitorData } from "@/lib/monitor";
@@ -29,11 +29,9 @@ export default async function ResultsPage({
 
   return (
     <AppShell profile={profile}>
-      <Link href={`/instructor/courses/${courseId}/exams/${examId}`} className="text-sm font-medium text-emerald-700">
-        ← {course.code} · {exam.title}
-      </Link>
+      <BackLink href={`/instructor/courses/${courseId}/exams/${examId}`}>{course.code} · {exam.title}</BackLink>
       {e1 || e2 ? (
-        <p className="rounded-xl bg-red-50 p-3 text-red-800">{(e1 ?? e2)!.message}</p>
+        <Notice kind="error">{(e1 ?? e2)!.message}</Notice>
       ) : (
         <ResultsView
           courseId={courseId}

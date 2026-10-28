@@ -1,15 +1,17 @@
-const STYLE = {
-  draft: "bg-slate-100 text-slate-700",
-  published: "bg-emerald-100 text-emerald-800",
-  closed: "bg-red-50 text-red-700",
-} as const;
+import { Badge, type BadgeTone } from "@/components/ui";
+
+const TONE: Record<"draft" | "published" | "closed", BadgeTone> = {
+  draft: "neutral",
+  published: "success",
+  closed: "danger",
+};
 
 const LABEL = { draft: "Draft", published: "Published", closed: "Closed" } as const;
 
-export function ExamStatusBadge({ status }: { status: keyof typeof STYLE }) {
+export function ExamStatusBadge({ status }: { status: keyof typeof TONE }) {
   return (
-    <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STYLE[status]}`}>
+    <Badge tone={TONE[status]} className="shrink-0">
       {LABEL[status]}
-    </span>
+    </Badge>
   );
 }

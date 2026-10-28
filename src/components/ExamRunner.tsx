@@ -11,6 +11,7 @@ import {
   submitAttempt,
 } from "@/app/actions/attempts";
 import { CameraWatch } from "@/components/CameraMonitor";
+import { Icon } from "@/components/icons";
 import { Watermark } from "@/components/Watermark";
 import {
   isAnswered,
@@ -42,14 +43,14 @@ function formatClock(ms: number) {
 
 function FullScreenMessage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-slate-50 px-6 text-center">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-ink-50 px-6 text-center">
       {children}
     </div>
   );
 }
 
 function Spinner() {
-  return <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-700" />;
+  return <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-200 border-t-brand-700" />;
 }
 
 // ===========================================================================
@@ -126,8 +127,8 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   if (phase === "code") {
     return (
       <FullScreenMessage>
-        <p className="text-lg font-semibold">Enter the access code</p>
-        <p className="max-w-xs text-sm text-slate-600">
+        <p className="text-heading font-semibold">Enter the access code</p>
+        <p className="max-w-xs text-sm text-ink-600">
           You&apos;re continuing on a different device. Ask your instructor for the current code.
         </p>
         <form
@@ -143,10 +144,10 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
             inputMode="numeric"
             autoComplete="one-time-code"
             placeholder="000000"
-            className="block w-full rounded-xl border-2 border-slate-300 px-3 py-3 text-center font-mono text-3xl tracking-[0.4em] outline-none focus:border-emerald-600"
+            className="input !border-2 text-center font-mono text-3xl tracking-[0.4em]"
           />
-          {wrongCode && <p className="text-sm text-red-700">That code is wrong or expired.</p>}
-          <button className="min-h-12 w-full rounded-xl bg-emerald-700 font-semibold text-white">Continue</button>
+          {wrongCode && <p className="text-sm text-danger-700">That code is wrong or expired.</p>}
+          <button className="btn btn-primary w-full">Continue</button>
         </form>
       </FullScreenMessage>
     );
@@ -155,14 +156,14 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   if (phase === "kicked") {
     return (
       <FullScreenMessage>
-        <p className="text-lg font-semibold">This exam is open on another device or tab</p>
-        <p className="max-w-xs text-sm text-slate-600">
+        <p className="text-heading font-semibold">This exam is open on another device or tab</p>
+        <p className="max-w-xs text-sm text-ink-600">
           Only one screen can hold your exam at a time. Continuing here moves it to this screen, and your
           instructor will see that it moved.
         </p>
         <button
           onClick={() => open(null)}
-          className="min-h-12 w-full max-w-xs rounded-xl bg-emerald-700 font-semibold text-white"
+          className="btn btn-primary w-full max-w-xs"
         >
           Continue here
         </button>
@@ -173,10 +174,10 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   if (phase === "error") {
     return (
       <FullScreenMessage>
-        <p className="text-lg font-semibold">{error}</p>
+        <p className="text-heading font-semibold">{error}</p>
         <button
           onClick={() => open(null)}
-          className="min-h-12 w-full max-w-xs rounded-xl bg-emerald-700 font-semibold text-white"
+          className="btn btn-primary w-full max-w-xs"
         >
           Try again
         </button>
@@ -187,7 +188,7 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
   return (
     <FullScreenMessage>
       <Spinner />
-      <p className="text-slate-600">Opening your exam…</p>
+      <p className="text-ink-600">Opening your exam…</p>
     </FullScreenMessage>
   );
 }
@@ -520,18 +521,18 @@ function Runner({
     return (
       <FullScreenMessage>
         <Spinner />
-        <p className="text-lg font-semibold">
+        <p className="text-heading font-semibold">
           {finishing === "timeout" && "Time is up. Submitting your answers…"}
           {finishing === "manual" && "Submitting…"}
           {finishing === "leave_limit" && "You left the exam too many times. Submitting your answers…"}
         </p>
-        <p className="text-sm text-slate-500">Keep this page open.</p>
+        <p className="text-sm text-ink-600">Keep this page open.</p>
       </FullScreenMessage>
     );
   }
 
   return (
-    <div className="min-h-dvh select-none bg-slate-50 pb-28 [-webkit-touch-callout:none]">
+    <div className="min-h-dvh select-none bg-ink-50 pb-28 [-webkit-touch-callout:none]">
       <Watermark text={watermark} />
       {state.require_camera && (
         <CameraWatch
@@ -543,53 +544,57 @@ function Runner({
         />
       )}
 
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-2">
+      <header className="sticky top-0 z-20 border-b border-ink-200 bg-white/95 shadow-card backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-2.5">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{state.title}</p>
-            <p className="text-xs text-slate-500">
+            <p className="truncate text-base font-semibold text-ink-900">{state.title}</p>
+            <p className="text-xs tabular-nums text-ink-600">
               {answered.size} of {total} answered
               {saveStatus === "saving" && " · Saving…"}
               {saveStatus === "saved" && " · Saved ✓"}
               {saveStatus === "offline" && (
-                <span className="font-semibold text-amber-700"> · Offline, will retry</span>
+                <span className="font-semibold text-warning-800"> · Offline, will retry</span>
               )}
             </p>
           </div>
           <div
-            className={`shrink-0 rounded-full px-3 py-1.5 font-mono text-lg font-bold tabular-nums ${
-              lowTime ? "bg-red-600 text-white" : "bg-slate-900 text-white"
+            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xl font-bold tabular-nums ${
+              lowTime ? "border-danger-600 bg-danger-600 text-white" : "border-brand-200 bg-brand-50 text-brand-900"
             }`}
             role="timer"
             aria-label="Time left"
           >
+            <Icon name="clock" size={18} />
             {formatClock(remaining)}
           </div>
         </div>
+        <div className="h-1 bg-ink-100" aria-hidden>
+          <div className="h-full bg-brand-600 transition-[width]" style={{ width: `${total ? (answered.size / total) * 100 : 0}%` }} />
+        </div>
       </header>
 
-      <main className="relative mx-auto max-w-2xl space-y-4 px-4 py-4">
+      <main className="relative mx-auto max-w-2xl space-y-4 px-4 py-5">
         {leaveWarning && (
-          <div className="relative z-20 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+          <div className="notice notice-error relative z-20 !block">
             <p className="font-semibold">You left the exam screen.</p>
             <p>
               This was recorded and your instructor can see it (left {leaves} time{leaves === 1 ? "" : "s"}).
               {state.leave_limit !== null &&
                 ` After ${state.leave_limit} times, your exam is submitted automatically.`}
             </p>
-            <button onClick={() => setLeaveWarning(false)} className="mt-1 font-semibold underline">
+            <button onClick={() => setLeaveWarning(false)} className="btn btn-outline-danger btn-sm mt-2">
               OK
             </button>
           </div>
         )}
 
-        <p className="text-sm font-semibold text-slate-500">
+        <p className="text-sm font-semibold tabular-nums text-ink-600">
           Question {index + 1} of {total}
           {q && ` · ${Number(q.points)} pt${Number(q.points) === 1 ? "" : "s"}`}
         </p>
 
         {loadError && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="notice notice-warn !block">
             {loadError}{" "}
             <button
               className="font-semibold underline"
@@ -603,11 +608,11 @@ function Runner({
           </div>
         )}
 
-        {!q && !loadError && <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />}
+        {!q && !loadError && <div className="h-40 animate-pulse rounded-card bg-ink-200" />}
 
         {q && (
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
-            <p className="whitespace-pre-line text-lg leading-relaxed">{q.stem}</p>
+          <div className="card space-y-5 !p-4 sm:!p-5">
+            <p className="whitespace-pre-line text-question font-medium text-ink-900">{q.stem}</p>
 
             {q.type === "mcq" && (
               <div className="space-y-2" role="radiogroup">
@@ -619,18 +624,21 @@ function Runner({
                       role="radio"
                       aria-checked={!!selected}
                       onClick={() => setAnswer(index, { choice: c.key }, false)}
-                      className={`flex w-full items-start gap-3 rounded-xl border-2 p-3 text-left text-base ${
-                        selected ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-white"
+                      className={`flex min-h-14 w-full items-start gap-3 rounded-control border-2 p-3 text-left text-base leading-snug ${
+                        selected
+                          ? "border-brand-600 bg-brand-50 text-ink-900 shadow-card"
+                          : "border-ink-300 bg-white text-ink-800 hover:border-ink-400 hover:bg-ink-50"
                       }`}
                     >
                       <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                          selected ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700"
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                          selected ? "bg-brand-700 text-white" : "bg-ink-100 text-ink-700"
                         }`}
                       >
                         {CHOICE_KEYS[i]}
                       </span>
-                      <span className="pt-0.5">{c.text}</span>
+                      <span className="flex-1 pt-1">{c.text}</span>
+                      {selected && <Icon name="check" size={22} className="mt-1 text-brand-700" />}
                     </button>
                   );
                 })}
@@ -647,7 +655,7 @@ function Runner({
                 autoCorrect="off"
                 spellCheck={false}
                 maxLength={500}
-                className="block w-full select-text rounded-xl border-2 border-slate-300 px-3 py-3 text-lg outline-none focus:border-emerald-600"
+                className="input !border-2 select-text !text-lg"
               />
             )}
 
@@ -663,9 +671,9 @@ function Runner({
                   autoCorrect="off"
                   spellCheck={false}
                   maxLength={10000}
-                  className="block w-full select-text rounded-xl border-2 border-slate-300 px-3 py-3 text-base leading-relaxed outline-none focus:border-emerald-600"
+                  className="input !border-2 select-text leading-relaxed"
                 />
-                <p className="text-right text-xs text-slate-500">
+                <p className="text-right text-xs tabular-nums text-ink-600">
                   {(answer && "text" in answer ? (answer.text ?? "") : "").length} / 10,000 · checked by your instructor
                 </p>
               </div>
@@ -673,12 +681,12 @@ function Runner({
 
             {q.type === "enumeration" && (
               <div className="space-y-2">
-                <p className="text-sm text-slate-500">Give {q.slots} answers.</p>
+                <p className="text-sm text-ink-600">Give {q.slots} answers.</p>
                 {Array.from({ length: q.slots ?? 0 }, (_, i) => {
                   const items = answer && "items" in answer ? (answer.items ?? []) : [];
                   return (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="w-6 shrink-0 text-right font-semibold text-slate-500">{i + 1}.</span>
+                      <span className="w-6 shrink-0 text-right font-semibold tabular-nums text-ink-600">{i + 1}.</span>
                       <input
                         value={items[i] ?? ""}
                         onChange={(e) => {
@@ -691,7 +699,7 @@ function Runner({
                         autoCorrect="off"
                         spellCheck={false}
                         maxLength={200}
-                        className="block w-full select-text rounded-xl border-2 border-slate-300 px-3 py-3 text-base outline-none focus:border-emerald-600"
+                        className="input !border-2 select-text"
                       />
                     </div>
                   );
@@ -704,22 +712,22 @@ function Runner({
 
       {blockedNotice && (
         <div className="fixed inset-x-0 bottom-24 z-30 flex justify-center px-4">
-          <p className="rounded-full bg-slate-900 px-4 py-2 text-sm text-white shadow-lg">{blockedNotice}</p>
+          <p className="rounded-full bg-ink-900 px-4 py-2.5 text-sm font-medium text-white shadow-pop">{blockedNotice}</p>
         </div>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white">
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-ink-200 bg-white shadow-pop pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
           <button
             onClick={() => goTo(index - 1)}
             disabled={index === 0}
-            className="min-h-12 flex-1 rounded-xl border border-slate-300 font-semibold disabled:opacity-40"
+            className="btn btn-secondary btn-lg flex-1 !text-base"
           >
             ← Prev
           </button>
           <button
             onClick={() => setShowNav(true)}
-            className="min-h-12 rounded-xl border border-slate-300 px-4 font-semibold tabular-nums"
+            className="btn btn-secondary btn-lg !px-3 !text-base tabular-nums"
             aria-label="All questions"
           >
             {index + 1}/{total}
@@ -727,14 +735,14 @@ function Runner({
           {index < total - 1 ? (
             <button
               onClick={() => goTo(index + 1)}
-              className="min-h-12 flex-1 rounded-xl bg-emerald-700 font-semibold text-white"
+              className="btn btn-primary btn-lg flex-1 !text-base"
             >
               Next →
             </button>
           ) : (
             <button
               onClick={() => setConfirmSubmit(true)}
-              className="min-h-12 flex-1 rounded-xl bg-emerald-700 font-semibold text-white"
+              className="btn btn-primary btn-lg flex-1 !text-base"
             >
               Submit
             </button>
@@ -743,17 +751,17 @@ function Runner({
       </nav>
 
       {showNav && (
-        <div className="fixed inset-0 z-30 flex items-end bg-black/40" onClick={() => setShowNav(false)}>
+        <div className="fixed inset-0 z-30 flex items-end bg-ink-950/50" onClick={() => setShowNav(false)}>
           <div
-            className="max-h-[80dvh] w-full overflow-y-auto rounded-t-2xl bg-white p-4"
+            className="mx-auto max-h-[80dvh] w-full max-w-2xl overflow-y-auto rounded-t-card bg-white p-4 shadow-pop"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
               <p className="font-semibold">
                 {answered.size} of {total} answered
               </p>
-              <button onClick={() => setShowNav(false)} className="px-2 py-1 text-slate-500" aria-label="Close">
-                ✕
+              <button onClick={() => setShowNav(false)} className="btn btn-quiet !min-h-10 !min-w-10 !px-2" aria-label="Close">
+                <Icon name="x" size={20} />
               </button>
             </div>
             <div className="grid grid-cols-6 gap-2 sm:grid-cols-10">
@@ -761,9 +769,9 @@ function Runner({
                 <button
                   key={i}
                   onClick={() => goTo(i)}
-                  className={`aspect-square rounded-lg text-sm font-semibold ${
-                    answered.has(i) ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700"
-                  } ${i === index ? "ring-2 ring-slate-900 ring-offset-2" : ""}`}
+                  className={`aspect-square rounded-chip text-sm font-semibold tabular-nums ${
+                    answered.has(i) ? "bg-brand-700 text-white" : "bg-ink-100 text-ink-700"
+                  } ${i === index ? "ring-2 ring-ink-900 ring-offset-2" : ""}`}
                 >
                   {i + 1}
                 </button>
@@ -774,7 +782,7 @@ function Runner({
                 setShowNav(false);
                 setConfirmSubmit(true);
               }}
-              className="mt-4 min-h-12 w-full rounded-xl bg-emerald-700 font-semibold text-white"
+              className="btn btn-primary mt-4 w-full"
             >
               Submit exam
             </button>
@@ -783,27 +791,27 @@ function Runner({
       )}
 
       {confirmSubmit && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-6">
-          <div className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-5">
-            <p className="text-lg font-semibold">Submit your exam?</p>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink-950/50 px-6">
+          <div className="w-full max-w-sm space-y-4 rounded-card bg-white p-5 shadow-pop">
+            <p className="text-heading font-semibold">Submit your exam?</p>
             {unanswered > 0 ? (
-              <p className="text-sm text-amber-800">
+              <p className="text-sm text-warning-800">
                 You have <b>{unanswered}</b> unanswered question{unanswered === 1 ? "" : "s"}.
               </p>
             ) : (
-              <p className="text-sm text-slate-600">All questions answered.</p>
+              <p className="text-sm text-ink-600">All questions answered.</p>
             )}
-            <p className="text-sm text-slate-600">You can&apos;t change your answers after submitting.</p>
+            <p className="text-sm text-ink-600">You can&apos;t change your answers after submitting.</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setConfirmSubmit(false)}
-                className="min-h-12 flex-1 rounded-xl border border-slate-300 font-semibold"
+                className="btn btn-secondary flex-1"
               >
                 Go back
               </button>
               <button
                 onClick={() => finish("manual")}
-                className="min-h-12 flex-1 rounded-xl bg-emerald-700 font-semibold text-white"
+                className="btn btn-primary flex-1"
               >
                 Submit
               </button>

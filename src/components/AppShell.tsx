@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/Avatar";
+import { Icon, LogoMark, type IconName } from "@/components/icons";
 import { HOME_FOR_ROLE, type Profile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -22,43 +23,42 @@ export async function AppShell({ profile, children }: { profile: Profile; childr
   }
   // Big, equal touch targets: icon on phones, icon + label from the "sm" width up.
   const btn =
-    "relative flex h-11 min-w-11 flex-col items-center justify-center rounded-xl px-1.5 text-slate-600 hover:bg-slate-100 active:bg-slate-200 sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-3";
-  const label = (icon: string, text: string) => (
+    "relative flex h-12 min-w-12 flex-col items-center justify-center gap-0.5 rounded-control px-1.5 text-white/90 hover:bg-white/10 hover:text-white active:bg-white/20 sm:h-11 sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-3";
+  const label = (icon: IconName, text: string) => (
     <>
-      <span aria-hidden className="text-lg leading-none">
-        {icon}
-      </span>
-      <span className="text-[10px] font-medium leading-tight sm:text-sm">{text}</span>
+      <Icon name={icon} size={22} className="sm:size-5" />
+      <span className="text-[11px] font-medium leading-none sm:text-sm">{text}</span>
     </>
   );
 
   return (
-    <div className="min-h-dvh bg-slate-50">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div className="min-h-dvh bg-ink-50">
+      <header className="sticky top-0 z-10 bg-brand-800 text-white shadow-raised">
         <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-1.5 sm:px-4">
+          <LogoMark size={32} tone="light" className="hidden min-[400px]:block" />
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <Avatar name={profile.full_name} src={profile.avatar} size={40} />
+            <Avatar name={profile.full_name} src={profile.avatar} size={40} className="ring-2 ring-white/60" />
             {/* The name needs room; on a small phone the avatar and the buttons come first. */}
             <span className="hidden min-w-0 sm:block">
-              <span className="block truncate text-[10px] font-semibold uppercase tracking-wide text-emerald-700 sm:text-xs">
+              <span className="block truncate text-xs font-semibold uppercase tracking-wide text-brand-100">
                 Accounthink · {ROLE_LABEL[profile.role]}
               </span>
-              <span className="block truncate text-sm font-semibold text-slate-900 sm:text-base">
+              <span className="block truncate text-base font-semibold text-white">
                 {profile.full_name || "Unnamed user"}
               </span>
             </span>
           </div>
           <nav className="flex shrink-0 items-center" aria-label="Main">
             <Link href={HOME_FOR_ROLE[profile.role]} className={btn} aria-label="Home" title="Home">
-              {label("🏠", "Home")}
+              {label("home", "Home")}
             </Link>
             {canMessage && (
               <Link href="/messages" className={btn}>
-                {label("✉️", "Messages")}
+                {label("mail", "Messages")}
                 {unread > 0 && (
                   <span
                     aria-label={`${unread} unread`}
-                    className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white"
+                    className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger-600 px-1 text-[11px] font-bold text-white ring-2 ring-brand-800"
                   >
                     {unread > 99 ? "99+" : unread}
                   </span>
@@ -66,17 +66,15 @@ export async function AppShell({ profile, children }: { profile: Profile; childr
               </Link>
             )}
             <Link href="/account" className={btn}>
-              {label("👤", "Account")}
+              {label("user", "Account")}
             </Link>
             <form action="/auth/signout" method="post">
-              <button className={btn}>
-                {label("🚪", "Sign out")}
-              </button>
+              <button className={btn}>{label("logout", "Sign out")}</button>
             </form>
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl space-y-4 px-4 py-4">{children}</main>
+      <main className="mx-auto max-w-3xl space-y-5 px-4 py-5 pb-10">{children}</main>
     </div>
   );
 }

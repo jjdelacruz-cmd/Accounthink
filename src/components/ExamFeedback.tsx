@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { FeedbackItem } from "@/lib/attempts";
+import { SectionTitle } from "@/components/ui";
 import { CHOICE_KEYS, ITEM_TYPE_LABEL } from "@/lib/items";
 
 function mark(it: FeedbackItem) {
@@ -14,10 +15,10 @@ function mark(it: FeedbackItem) {
 }
 
 const STYLE = {
-  right: { card: "border-emerald-200", badge: "bg-emerald-100 text-emerald-800", icon: "✓", word: "Correct" },
-  partial: { card: "border-amber-200", badge: "bg-amber-100 text-amber-900", icon: "½", word: "Partly correct" },
-  wrong: { card: "border-red-200", badge: "bg-red-100 text-red-800", icon: "✗", word: "Wrong" },
-  pending: { card: "border-slate-200", badge: "bg-slate-100 text-slate-700", icon: "…", word: "Being checked" },
+  right: { card: "border-l-brand-600", badge: "badge-success", icon: "✓", word: "Correct" },
+  partial: { card: "border-l-warning-500", badge: "badge-warning", icon: "½", word: "Partly correct" },
+  wrong: { card: "border-l-danger-600", badge: "badge-danger", icon: "✗", word: "Wrong" },
+  pending: { card: "border-l-ink-400", badge: "badge-neutral", icon: "…", word: "Being checked" },
 };
 
 function Choices({ it }: { it: FeedbackItem }) {
@@ -29,14 +30,14 @@ function Choices({ it }: { it: FeedbackItem }) {
         const mine = picked === c.key;
         const isKey = c.is_key === true;
         const cls = isKey
-          ? "bg-emerald-50 font-semibold text-emerald-900"
+          ? "bg-brand-50 font-semibold text-brand-900"
           : mine
             ? right
-              ? "bg-emerald-50 font-semibold text-emerald-900"
-              : "bg-red-50 text-red-900"
-            : "text-slate-700";
+              ? "bg-brand-50 font-semibold text-brand-900"
+              : "bg-danger-50 text-danger-900"
+            : "text-ink-700";
         return (
-          <li key={c.key} className={`flex gap-2 rounded-lg px-2 py-1.5 text-sm ${cls}`}>
+          <li key={c.key} className={`flex gap-2 rounded-chip px-2 py-1.5 text-sm ${cls}`}>
             <span className="w-5 shrink-0">{CHOICE_KEYS[i]}.</span>
             <span className="flex-1">{c.text}</span>
             {mine && <span className="shrink-0 text-xs font-semibold">your answer</span>}
@@ -44,7 +45,7 @@ function Choices({ it }: { it: FeedbackItem }) {
           </li>
         );
       })}
-      {!picked && <li className="px-2 text-sm italic text-slate-500">You left this blank.</li>}
+      {!picked && <li className="px-2 text-sm italic text-ink-600">You left this blank.</li>}
     </ul>
   );
 }
@@ -67,10 +68,10 @@ function Written({ it, showAnswers }: { it: FeedbackItem; showAnswers: boolean }
       <p className={it.type === "essay" ? "whitespace-pre-line" : ""}>
         <span className="font-semibold">Your answer:</span>
         {it.type === "essay" ? <br /> : " "}
-        {given.length ? given.join("; ") : <span className="italic text-slate-500">blank</span>}
+        {given.length ? given.join("; ") : <span className="italic text-ink-600">blank</span>}
       </p>
       {showAnswers && keyText && m !== "right" && m !== "pending" && (
-        <p className="text-emerald-800">
+        <p className="text-brand-800">
           <span className="font-semibold">{it.type === "essay" ? "A good answer covers:" : "Correct answer:"}</span>{" "}
           {keyText}
         </p>
@@ -90,17 +91,17 @@ export function ExamFeedback({ items, showAnswers }: { items: FeedbackItem[]; sh
 
   return (
     <section className="space-y-3">
-      <div className="flex items-end justify-between gap-2">
-        <h2 className="text-lg font-bold">Your answers</h2>
-        <p className="text-sm text-slate-600">
-          <span className="font-semibold text-emerald-700">{right} right</span>
-          {partial > 0 && <span className="font-semibold text-amber-700"> · {partial} partly</span>}
-          <span className="font-semibold text-red-700"> · {wrong} wrong</span>
-          {pending > 0 && <span className="font-semibold text-slate-600"> · {pending} being checked</span>}
+      <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+        <SectionTitle>Your answers</SectionTitle>
+        <p className="text-sm text-ink-600">
+          <span className="font-semibold text-brand-800">{right} right</span>
+          {partial > 0 && <span className="font-semibold text-warning-800"> · {partial} partly</span>}
+          <span className="font-semibold text-danger-700"> · {wrong} wrong</span>
+          {pending > 0 && <span className="font-semibold text-ink-600"> · {pending} being checked</span>}
         </p>
       </div>
 
-      <div className="flex gap-1 rounded-xl bg-slate-200/70 p-1">
+      <div className="tabs grid-cols-2">
         {[
           [false, `All (${items.length})`],
           [true, `Mistakes only (${mistakes})`],
@@ -109,36 +110,35 @@ export function ExamFeedback({ items, showAnswers }: { items: FeedbackItem[]; sh
             key={String(v)}
             type="button"
             onClick={() => setMistakesOnly(v as boolean)}
-            className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold ${
-              mistakesOnly === v ? "bg-white text-emerald-800 shadow-sm" : "text-slate-600"
-            }`}
+            aria-pressed={mistakesOnly === v}
+            className="tab"
           >
             {label as string}
           </button>
         ))}
       </div>
 
-      {shown.length === 0 && <p className="text-center text-sm text-slate-600">No mistakes. Well done!</p>}
+      {shown.length === 0 && <p className="text-center text-sm text-ink-600">No mistakes. Well done!</p>}
 
-      <ol className="space-y-2">
+      <ol className="space-y-3">
         {shown.map((it) => {
           const m = mark(it);
           const s = STYLE[m];
           return (
-            <li key={it.index} className={`space-y-2 rounded-xl border bg-white p-3 ${s.card}`}>
+            <li key={it.index} className={`card space-y-2 !p-3 border-l-4 sm:!p-4 ${s.card}`}>
               <div className="flex items-start justify-between gap-2">
-                <p className="text-xs font-semibold text-slate-500">
+                <p className="text-xs font-semibold text-ink-600">
                   {it.index}. {ITEM_TYPE_LABEL[it.type]}
                 </p>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${s.badge}`}>
+                <span className={`badge shrink-0 ${s.badge}`}>
                   {s.icon} {s.word}
                   {m === "pending" ? ` · ${Number(it.points)} pts` : ` · ${Number(it.points_awarded)}/${Number(it.points)}`}
                 </span>
               </div>
-              <p className="whitespace-pre-line">{it.stem}</p>
+              <p className="whitespace-pre-line text-base text-ink-900">{it.stem}</p>
               {it.type === "mcq" ? <Choices it={it} /> : <Written it={it} showAnswers={showAnswers} />}
               {it.comment && (
-                <p className="rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-900">
+                <p className="rounded-chip bg-info-50 px-3 py-2 text-sm text-info-900">
                   <span className="font-semibold">Instructor:</span> {it.comment}
                 </p>
               )}
@@ -147,7 +147,7 @@ export function ExamFeedback({ items, showAnswers }: { items: FeedbackItem[]; sh
         })}
       </ol>
       {!showAnswers && (
-        <p className="text-center text-xs text-slate-500">Your instructor chose not to show the correct answers.</p>
+        <p className="text-center text-xs text-ink-600">Your instructor chose not to show the correct answers.</p>
       )}
     </section>
   );

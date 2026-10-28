@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { PageTitle } from "@/components/ui";
 import { InboxView } from "@/components/InboxView";
 import { requireRole } from "@/lib/auth";
 import type { Contact, InboxRow } from "@/lib/messages";
@@ -11,8 +12,8 @@ export default async function MessagesPage() {
   return (
     <AppShell profile={profile}>
       <div>
-        <h1 className="text-xl font-bold">Messages</h1>
-        <p className="text-sm text-slate-600">
+        <PageTitle>Messages</PageTitle>
+        <p className="text-sm text-ink-600">
           {profile.role === "student"
             ? "You can message your instructors. Students can't message each other."
             : "Message your students. They can reply to you here."}

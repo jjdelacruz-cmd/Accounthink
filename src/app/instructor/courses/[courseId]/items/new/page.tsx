@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { ItemEditor } from "@/components/ItemEditor";
-import { Card } from "@/components/ui";
+import { BackLink, Card, PageTitle } from "@/components/ui";
 import { getOwnedCourse } from "@/lib/courses";
 import { getTopics } from "../topics";
 
@@ -12,10 +11,8 @@ export default async function NewItemPage({ params }: { params: Promise<{ course
 
   return (
     <AppShell profile={profile}>
-      <Link href={`/instructor/courses/${courseId}/items`} className="text-sm font-medium text-emerald-700">
-        ← {course.code} item bank
-      </Link>
-      <h1 className="text-xl font-bold">New item</h1>
+      <BackLink href={`/instructor/courses/${courseId}/items`}>{course.code} item bank</BackLink>
+      <PageTitle>New item</PageTitle>
       <Card>
         <ItemEditor courseId={courseId} topics={topics} />
       </Card>

@@ -17,7 +17,7 @@ export function DuplicateItemButton({ itemId, courseId }: { itemId: string; cour
           else router.push(`/instructor/courses/${courseId}/items/${res.id}`);
         })
       }
-      className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold disabled:opacity-50"
+      className="btn btn-secondary btn-sm"
     >
       {pending ? "Copying…" : "Duplicate"}
     </button>

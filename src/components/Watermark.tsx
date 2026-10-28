@@ -7,7 +7,7 @@ export function Watermark({ text }: { text: string }) {
         {rows.map((_, i) => (
           <p
             key={i}
-            className="whitespace-nowrap text-sm font-semibold tracking-wide text-slate-900/[0.07]"
+            className="whitespace-nowrap text-sm font-semibold tracking-wide text-ink-900/[0.07]"
             style={{ marginLeft: i % 2 ? "-6rem" : 0 }}
           >
             {Array.from({ length: 8 }, () => text).join("      ")}

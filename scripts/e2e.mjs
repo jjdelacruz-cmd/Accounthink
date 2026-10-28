@@ -102,7 +102,7 @@ try {
 
   // Import items
   await T.page.getByRole("link", { name: "Items", exact: true }).click();
-  await T.page.getByRole("link", { name: "⬆ Import" }).click();
+  await T.page.getByRole("link", { name: "Import", exact: true }).click();
   await T.page.locator("textarea").fill(`1. Which is the MOST reliable audit evidence?
 A. Oral representations from management
 B. Confirmations received directly from third parties
@@ -366,14 +366,14 @@ ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
   ok("Questions used in a published exam are protected from deletion", keptMsg);
 
   // A second upload, then delete one question, then select-and-delete, then the upload.
-  await T.page.getByRole("link", { name: "⬆ Import" }).click();
+  await T.page.getByRole("link", { name: "Import", exact: true }).click();
   await T.page.locator("textarea").fill("1. Extra one?\nANSWER: a\n2. Extra two?\nANSWER: b\n3. Extra three?\nANSWER: c");
   await T.page.getByPlaceholder("e.g. Chapter 3 quiz – Audit evidence").fill("Extra set");
   await T.page.getByRole("button", { name: "Import 3 questions" }).click();
   await T.page.getByText("Imported 3 questions as “Extra set”.").waitFor();
 
   T.page.once("dialog", (d) => d.accept());
-  await T.page.locator("div.rounded-2xl", { hasText: "Extra one?" }).getByRole("button", { name: "Delete" }).click();
+  await T.page.locator("div.card", { hasText: "Extra one?" }).getByRole("button", { name: "Delete" }).click();
   await T.page.getByText("Deleted 1 question.").waitFor();
   ok("Delete a single question", await T.page.getByText("Extra one?").waitFor({ state: "detached" }).then(() => true).catch(() => false));
 
@@ -398,7 +398,7 @@ ANSWER: Cash; Receivables / Accounts receivable; Inventory`);
 
   // ---- Essays, camera monitoring and checking answers by hand
   await T.page.goto(bankUrl);
-  await T.page.getByRole("link", { name: "⬆ Import" }).click();
+  await T.page.getByRole("link", { name: "Import", exact: true }).click();
   await T.page.locator("textarea").fill(`1. Explain the going concern assumption.
 TYPE: Essay
 POINTS: 4

@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { createCourse, createSection, setJoinOpen } from "@/app/actions/instructor";
 import { ActionForm } from "@/components/ActionForm";
 import { DownloadAllGradebooks } from "@/components/DownloadGradebook";
 import { AppShell } from "@/components/AppShell";
-import { Card, Field } from "@/components/ui";
+import { Button, Card, EmptyState, Field, LinkButton, PageTitle, SectionTitle } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,69 +31,62 @@ export default async function InstructorHome() {
 
   return (
     <AppShell profile={profile}>
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-bold">My courses</h1>
-        {profile.role === "admin" && (
-          <Link
-            href="/admin"
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold"
-          >
-            Manage users
-          </Link>
-        )}
-      </div>
+      <PageTitle
+        actions={
+          profile.role === "admin" && (
+            <LinkButton href="/admin" variant="secondary" size="sm" icon="users">
+              Manage users
+            </LinkButton>
+          )
+        }
+      >
+        My courses
+      </PageTitle>
 
       {courses.length > 0 && <DownloadAllGradebooks className="sm:w-fit" />}
 
       {courses.length === 0 && (
-        <p className="text-sm text-slate-600">No courses yet. Add your first one below.</p>
+        <EmptyState icon="layers" title="No courses yet">
+          Add your first one below.
+        </EmptyState>
       )}
 
       {courses.map((course) => (
-        <Card key={course.id} className="space-y-3">
+        <Card key={course.id} className="space-y-4">
           <div>
-            <p className="text-sm font-semibold text-emerald-700">{course.code}</p>
-            <h2 className="text-lg font-semibold">{course.title}</h2>
+            <p className="text-sm font-semibold text-brand-700">{course.code}</p>
+            <h2 className="text-heading font-semibold">{course.title}</h2>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <Link
-              href={`/instructor/courses/${course.id}/items`}
-              className="rounded-xl border border-slate-300 px-3 py-3 text-center text-sm font-semibold"
-            >
+            <LinkButton href={`/instructor/courses/${course.id}/items`} variant="secondary" size="sm" icon="layers" className="min-h-12">
               Items
-            </Link>
-            <Link
-              href={`/instructor/courses/${course.id}/exams`}
-              className="rounded-xl bg-emerald-700 px-3 py-3 text-center text-sm font-semibold text-white"
-            >
+            </LinkButton>
+            <LinkButton href={`/instructor/courses/${course.id}/exams`} size="sm" icon="clipboard" className="min-h-12">
               Exams
-            </Link>
-            <Link
-              href={`/instructor/courses/${course.id}/scores`}
-              className="rounded-xl border border-slate-300 px-3 py-3 text-center text-sm font-semibold"
-            >
+            </LinkButton>
+            <LinkButton href={`/instructor/courses/${course.id}/scores`} variant="secondary" size="sm" icon="chart" className="min-h-12">
               Scores
-            </Link>
+            </LinkButton>
           </div>
 
           {course.sections.length > 0 && (
-            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+            <ul className="list">
               {course.sections
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((s) => (
-                  <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
-                    <div>
+                  <li key={s.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 p-3">
+                    <div className="min-w-0">
                       <p className="font-semibold">{s.name}</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-ink-600">
                         {[s.school_year, s.semester].filter(Boolean).join(" · ") || "—"} ·{" "}
                         {s.section_members[0]?.count ?? 0} students
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`rounded-lg px-2 py-1 font-mono text-lg font-bold tracking-widest ${
-                          s.join_open ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-400 line-through"
+                        className={`rounded-chip px-2.5 py-1 font-mono text-lg font-bold tracking-widest ${
+                          s.join_open ? "bg-brand-50 text-brand-800" : "bg-ink-100 text-ink-500 line-through"
                         }`}
                         title="Join code"
                       >
@@ -103,9 +95,9 @@ export default async function InstructorHome() {
                       <form action={setJoinOpen}>
                         <input type="hidden" name="section_id" value={s.id} />
                         <input type="hidden" name="open" value={String(!s.join_open)} />
-                        <button className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-medium">
+                        <Button variant="secondary" size="sm">
                           {s.join_open ? "Close joining" : "Open joining"}
-                        </button>
+                        </Button>
                       </form>
                     </div>
                   </li>
@@ -113,8 +105,10 @@ export default async function InstructorHome() {
             </ul>
           )}
 
-          <details className="rounded-xl bg-slate-50 p-3">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-700">+ Add section</summary>
+          <details className="group rounded-control bg-ink-50 p-3">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-brand-800 [&::-webkit-details-marker]:hidden">
+              + Add section
+            </summary>
             <ActionForm action={createSection} submitLabel="Add section" className="mt-3 space-y-3">
               <input type="hidden" name="course_id" value={course.id} />
               <Field label="Section" name="name" placeholder="e.g. BSA-2Y1-1" required />
@@ -128,7 +122,7 @@ export default async function InstructorHome() {
       ))}
 
       <Card>
-        <h2 className="mb-3 font-semibold">Add a course</h2>
+        <SectionTitle className="mb-3">Add a course</SectionTitle>
         <ActionForm action={createCourse} submitLabel="Add course">
           <Field label="Course code" name="code" placeholder="e.g. AUDI314" required />
           <Field label="Course title" name="title" placeholder="e.g. Auditing and Assurance" required />

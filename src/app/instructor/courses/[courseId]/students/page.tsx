@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { CourseNav } from "@/components/CourseNav";
 import { ResetPasswordButton } from "@/components/ResetPasswordButton";
-import { Card } from "@/components/ui";
+import { Badge, Card, EmptyState } from "@/components/ui";
 import { getOwnedCourse } from "@/lib/courses";
 import { formatManila } from "@/lib/time";
 
@@ -32,43 +32,47 @@ export default async function StudentsPage({ params }: { params: Promise<{ cours
     <AppShell profile={profile}>
       <CourseNav course={course} active="students" />
 
-      {sections.length === 0 && <p className="text-sm text-slate-600">No sections yet. Add one from My courses.</p>}
+      {sections.length === 0 && (
+        <EmptyState icon="users" title="No sections yet">
+          No sections yet. Add one from My courses.
+        </EmptyState>
+      )}
 
       {sections.map((s) => {
         const members = s.section_members
           .filter((m) => m.profiles)
           .sort((a, b) => a.profiles!.full_name.localeCompare(b.profiles!.full_name));
         return (
-          <Card key={s.id} className="space-y-2 p-0">
-            <div className="flex items-center justify-between gap-2 px-4 pt-3">
-              <h2 className="font-semibold">
-                {s.name} <span className="text-sm font-normal text-slate-500">· {members.length} students</span>
+          <Card key={s.id} flush>
+            <div className="flex items-center justify-between gap-2 border-b border-ink-100 bg-ink-50 px-4 py-3">
+              <h2 className="min-w-0 font-semibold">
+                {s.name} <span className="text-sm font-normal text-ink-600">· {members.length} students</span>
               </h2>
-              <span className="rounded-md bg-emerald-50 px-2 py-0.5 font-mono text-sm font-bold tracking-widest text-emerald-800">
+              <Badge tone="brand" className="font-mono !text-sm tracking-widest" >
                 {s.join_code}
-              </span>
+              </Badge>
             </div>
             {members.length === 0 ? (
-              <p className="px-4 pb-3 text-sm text-slate-500">No students have joined yet.</p>
+              <p className="px-4 py-4 text-sm text-ink-600">No students have joined yet.</p>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ink-100">
                 {members.map((m) => {
                   const p = m.profiles!;
                   return (
-                    <li key={p.id} className="flex flex-wrap items-start justify-between gap-2 px-4 py-3">
+                    <li key={p.id} className="space-y-2 px-4 py-3">
                       <div className="flex min-w-0 items-start gap-3">
                         <Avatar name={p.full_name} src={p.avatar} size={40} />
                         <div className="min-w-0">
                           <p className="truncate font-semibold">{p.full_name || "—"}</p>
-                          <p className="truncate text-xs text-slate-500">
+                          <p className="truncate text-xs text-ink-600">
                             {[p.student_no, p.email].filter(Boolean).join(" · ")} · joined {formatManila(m.joined_at)}
                           </p>
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-start gap-2">
+                      <div className="flex flex-wrap items-start gap-2 pl-[52px]">
                         <Link
                           href={`/messages/${p.id}`}
-                          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold"
+                          className="btn btn-secondary btn-sm"
                         >
                           Message
                         </Link>
@@ -77,7 +81,7 @@ export default async function StudentsPage({ params }: { params: Promise<{ cours
                           <input type="hidden" name="section_id" value={s.id} />
                           <input type="hidden" name="student_id" value={p.id} />
                           <input type="hidden" name="course_id" value={courseId} />
-                          <button className="rounded-lg px-2 py-1 text-xs font-semibold text-red-700">Remove</button>
+                          <button className="btn btn-quiet-danger btn-sm">Remove</button>
                         </form>
                       </div>
                     </li>

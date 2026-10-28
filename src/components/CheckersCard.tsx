@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { addChecker, removeChecker } from "@/app/actions/checkers";
-import { Card, Notice } from "@/components/ui";
+import { Card, Notice, SectionTitle, inputClass } from "@/components/ui";
 
 type Checker = { checker_id: string; full_name: string; email: string | null };
 
@@ -17,20 +17,20 @@ export function CheckersCard({ courseId, examId, checkers }: { courseId: string;
   return (
     <Card className="space-y-3">
       <div>
-        <h2 className="font-semibold">Checkers</h2>
-        <p className="text-sm text-slate-600">
+        <SectionTitle>Checkers</SectionTitle>
+        <p className="text-sm text-ink-600">
           A checker is a separate account that can score the essay, identification and enumeration answers of this exam
           only, after students have taken it. They can&apos;t see your item bank, other exams or the results. The admin
           makes an account a checker under <b>Manage users</b>.
         </p>
       </div>
       {checkers.length > 0 && (
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+        <ul className="list">
           {checkers.map((c) => (
             <li key={c.checker_id} className="flex items-center justify-between gap-2 px-3 py-2">
               <div className="min-w-0">
                 <p className="truncate font-semibold">{c.full_name || "—"}</p>
-                <p className="truncate text-xs text-slate-500">{c.email}</p>
+                <p className="truncate text-xs text-ink-600">{c.email}</p>
               </div>
               <button
                 type="button"
@@ -42,7 +42,7 @@ export function CheckersCard({ courseId, examId, checkers }: { courseId: string;
                     router.refresh();
                   })
                 }
-                className="shrink-0 rounded-lg px-2 py-1 text-sm font-semibold text-red-700 disabled:opacity-50"
+                className="btn btn-quiet-danger btn-sm shrink-0"
               >
                 Remove
               </button>
@@ -72,12 +72,9 @@ export function CheckersCard({ courseId, examId, checkers }: { courseId: string;
           placeholder="Checker's email"
           aria-label="Checker's email"
           required
-          className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-base"
+          className={inputClass}
         />
-        <button
-          disabled={pending}
-          className="min-h-11 shrink-0 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50"
-        >
+        <button disabled={pending} className="btn btn-primary shrink-0">
           Add
         </button>
       </form>

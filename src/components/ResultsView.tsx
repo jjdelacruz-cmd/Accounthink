@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { acceptAnswer, regradeExam, setPassingPercent } from "@/app/actions/results";
 import { ActionForm } from "@/components/ActionForm";
-import { Notice } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { EmptyState, Notice, PageTitle, inputClass } from "@/components/ui";
 import { END_REASON_LABEL } from "@/lib/attempts";
 import { CHOICE_KEYS, ITEM_TYPE_LABEL } from "@/lib/items";
 import { isFlagged, type MonitorData, type MonitorStudent } from "@/lib/monitor";
@@ -27,10 +28,10 @@ type Sort = "name" | "high" | "low" | "section";
 
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl bg-white p-3 shadow-sm">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="text-2xl font-bold tabular-nums">{value}</p>
-      {sub && <p className="text-xs text-slate-500">{sub}</p>}
+    <div className="card !p-3">
+      <p className="text-xs font-semibold text-ink-600">{label}</p>
+      <p className="text-2xl font-bold tabular-nums text-ink-900">{value}</p>
+      {sub && <p className="text-xs text-ink-600">{sub}</p>}
     </div>
   );
 }
@@ -40,10 +41,10 @@ function Histogram({ buckets, passing }: { buckets: number[]; passing: number | 
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...buckets);
   return (
-    <figure className="rounded-xl bg-white p-3 shadow-sm">
-      <figcaption className="mb-2 text-sm font-semibold">Score distribution (% of total)</figcaption>
+    <figure className="card !p-3 sm:!p-4">
+      <figcaption className="mb-3 text-sm font-semibold">Score distribution (% of total)</figcaption>
       <div className="relative">
-        <div className="flex h-32 items-end gap-0.5 border-b border-slate-300" role="img" aria-label="Score distribution">
+        <div className="flex h-32 items-end gap-0.5 border-b border-ink-300" role="img" aria-label="Score distribution">
           {buckets.map((n, i) => {
             const below = passing !== null && (i + 1) * 10 <= passing;
             return (
@@ -55,12 +56,12 @@ function Histogram({ buckets, passing }: { buckets: number[]; passing: number | 
                 onClick={() => setHover(hover === i ? null : i)}
               >
                 <div
-                  className={`w-full rounded-t ${below ? "bg-emerald-300" : "bg-emerald-600"} ${hover === i ? "opacity-80" : ""}`}
+                  className={`w-full rounded-t-[3px] ${below ? "bg-brand-300" : "bg-brand-600"} ${hover === i ? "opacity-80" : ""}`}
                   style={{ height: n ? `${Math.max(4, (n / max) * 100)}%` : 0 }}
                 />
                 {hover === i && (
                   <div
-                    className={`absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs text-white ${
+                    className={`absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-chip bg-ink-900 px-2 py-1 text-xs text-white ${
                       i < 3 ? "left-0" : i > 6 ? "right-0" : "left-1/2 -translate-x-1/2"
                     }`}
                   >
@@ -71,7 +72,7 @@ function Histogram({ buckets, passing }: { buckets: number[]; passing: number | 
             );
           })}
         </div>
-        <div className="mt-1 flex gap-0.5 text-[10px] text-slate-500">
+        <div className="mt-1 flex gap-0.5 text-[11px] text-ink-600">
           {buckets.map((_, i) => (
             <span key={i} className="flex-1 text-center tabular-nums">
               {i * 10}
@@ -80,7 +81,7 @@ function Histogram({ buckets, passing }: { buckets: number[]; passing: number | 
         </div>
       </div>
       {passing !== null && (
-        <p className="mt-1 text-xs text-slate-500">Lighter bars are below the passing mark ({passing}%).</p>
+        <p className="mt-1 text-xs text-ink-600">Lighter bars are below the passing mark ({passing}%).</p>
       )}
       {/* Table view for screen readers */}
       <table className="sr-only">
@@ -99,9 +100,9 @@ function Histogram({ buckets, passing }: { buckets: number[]; passing: number | 
   );
 }
 
-function Meter({ value, className = "bg-emerald-600" }: { value: number; className?: string }) {
+function Meter({ value, className = "bg-brand-600" }: { value: number; className?: string }) {
   return (
-    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+    <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink-100">
       <div className={`h-full rounded-full ${className}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
     </div>
   );
@@ -126,44 +127,44 @@ function ItemCard({
   const v = verdict(it);
   const vStyle =
     v.level === "check"
-      ? "bg-red-50 text-red-900 border-red-200"
+      ? "bg-danger-50 text-danger-900 border-danger-200"
       : v.level === "revise"
-        ? "bg-amber-50 text-amber-900 border-amber-200"
-        : "bg-slate-50 text-slate-700 border-slate-200";
-  const vIcon = v.level === "check" ? "⚠" : v.level === "revise" ? "✎" : "✓";
+        ? "bg-warning-50 text-warning-900 border-warning-200"
+        : "bg-ink-50 text-ink-700 border-ink-200";
+  const vIcon = v.level === "check" ? "alert" : v.level === "revise" ? "pencil" : "check";
   const correctKey = it.key && "correct" in it.key ? it.key.correct : null;
 
   return (
-    <li className="space-y-3 rounded-xl border border-slate-200 bg-white p-3">
+    <li className="card space-y-3 !p-3 sm:!p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold text-slate-500">
+        <p className="text-xs font-semibold text-ink-600">
           {n}. {ITEM_TYPE_LABEL[it.type]} · {Number(it.points)} pt
         </p>
         <Link
           href={`/instructor/courses/${courseId}/items/${it.item_id}`}
-          className="shrink-0 text-xs font-semibold text-emerald-700"
+          className="btn btn-ghost btn-sm -mr-2 -mt-2 shrink-0"
         >
           Edit item
         </Link>
       </div>
-      <p className="line-clamp-4 whitespace-pre-line text-sm">{it.stem}</p>
+      <p className="line-clamp-4 whitespace-pre-line text-base text-ink-900">{it.stem}</p>
 
       <div className="space-y-1.5 text-xs">
         <div className="flex items-center gap-2">
-          <span className="w-[5.5rem] shrink-0 text-slate-600">% correct</span>
+          <span className="w-[5.5rem] shrink-0 text-ink-600">% correct</span>
           <Meter value={(it.p ?? 0) * 100} />
           <span className="w-32 shrink-0 text-right font-semibold tabular-nums">
             {it.p === null ? "—" : `${round1(it.p * 100)}%`} · {difficultyLabel(it.p)}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-[5.5rem] shrink-0 text-slate-600">Discrimination</span>
-          <Meter value={it.d === null ? 0 : Math.max(0, it.d) * 100} className={it.d !== null && it.d < 0 ? "bg-red-500" : "bg-slate-500"} />
+          <span className="w-[5.5rem] shrink-0 text-ink-600">Discrimination</span>
+          <Meter value={it.d === null ? 0 : Math.max(0, it.d) * 100} className={it.d !== null && it.d < 0 ? "bg-danger-500" : "bg-ink-500"} />
           <span className="w-32 shrink-0 text-right font-semibold tabular-nums">
             {it.d === null ? "—" : it.d.toFixed(2)} · {discriminationLabel(it.d)}
           </span>
         </div>
-        {it.n_blank > 0 && <p className="text-slate-500">{it.n_blank} left it blank.</p>}
+        {it.n_blank > 0 && <p className="text-ink-600">{it.n_blank} left it blank.</p>}
       </div>
 
       {it.type === "mcq" && it.choices && (
@@ -173,11 +174,11 @@ function ItemCard({
             const isKey = c.key === correctKey;
             return (
               <div key={c.key} className={`flex items-center gap-2 text-xs ${isKey ? "font-semibold" : ""}`}>
-                <span className={`w-5 shrink-0 ${isKey ? "text-emerald-800" : ""}`}>{CHOICE_KEYS[i]}.</span>
+                <span className={`w-5 shrink-0 ${isKey ? "text-brand-800" : ""}`}>{CHOICE_KEYS[i]}.</span>
                 <span className="w-2/5 shrink-0 truncate" title={c.text}>
                   {c.text}
                 </span>
-                <Meter value={submitted ? (count / submitted) * 100 : 0} className={isKey ? "bg-emerald-600" : "bg-slate-400"} />
+                <Meter value={submitted ? (count / submitted) * 100 : 0} className={isKey ? "bg-brand-600" : "bg-ink-400"} />
                 <span className="w-16 shrink-0 text-right tabular-nums">
                   {count}
                   {isKey ? " ✓ key" : count === 0 ? " · none" : ""}
@@ -196,11 +197,11 @@ function ItemCard({
 
       {it.type === "identification" && !!it.wrong_answers?.length && (
         <div className="space-y-1">
-          <p className="text-xs font-semibold text-slate-600">Most common wrong answers</p>
+          <p className="text-xs font-semibold text-ink-600">Most common wrong answers</p>
           {it.wrong_answers.map((w) => (
-            <div key={w.text} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2 py-1 text-xs">
+            <div key={w.text} className="flex items-center justify-between gap-2 rounded-chip bg-ink-50 px-2 py-1 text-xs">
               <span className="min-w-0 truncate">
-                “{w.text}” <span className="text-slate-500">×{w.n}</span>
+                “{w.text}” <span className="text-ink-600">×{w.n}</span>
               </span>
               <button
                 disabled={pending}
@@ -213,18 +214,19 @@ function ItemCard({
                     else router.refresh();
                   });
                 }}
-                className="shrink-0 rounded-md border border-emerald-600 px-2 py-0.5 font-semibold text-emerald-800 disabled:opacity-50"
+                className="btn btn-secondary btn-sm shrink-0 !border-brand-600 !text-brand-800"
               >
                 Accept as correct
               </button>
             </div>
           ))}
-          {err && <p className="text-xs text-red-700">{err}</p>}
+          {err && <p className="text-xs text-danger-700">{err}</p>}
         </div>
       )}
 
-      <p className={`rounded-lg border px-2 py-1.5 text-xs ${vStyle}`}>
-        {vIcon} {v.text}
+      <p className={`flex items-start gap-2 rounded-control border px-3 py-2 text-sm ${vStyle}`}>
+        <Icon name={vIcon} size={16} className="mt-1" />
+        <span>{v.text}</span>
       </p>
     </li>
   );
@@ -305,27 +307,19 @@ export function ResultsView({
   }
 
   const tabBtn = (key: "scores" | "items", label: string) => (
-    <button
-      onClick={() => setTab(key)}
-      className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold ${
-        tab === key ? "bg-white text-emerald-800 shadow-sm" : "text-slate-600"
-      }`}
-    >
+    <button onClick={() => setTab(key)} aria-pressed={tab === key} className="tab">
       {label}
     </button>
   );
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-xs font-semibold uppercase text-slate-500">Results</p>
-        <h1 className="text-xl font-bold">{examTitle}</h1>
-      </div>
+    <div className="space-y-5">
+      <PageTitle eyebrow="Results">{examTitle}</PageTitle>
 
       {toCheck > 0 && (
         <Link
           href={`/instructor/courses/${courseId}/exams/${examId}/check`}
-          className="block rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          className="notice notice-warn !block hover:bg-warning-100"
         >
           <b>{toCheck} answer{toCheck === 1 ? "" : "s"} waiting to be checked</b> (essays, or answers you set aside).
           Scores below don&apos;t include them yet. <span className="font-semibold underline">Check answers →</span>
@@ -348,34 +342,36 @@ export function ResultsView({
           <Histogram buckets={stats.buckets} passing={passingPercent} />
         </>
       ) : (
-        <p className="rounded-xl bg-white p-4 text-center text-slate-600 shadow-sm">No one has submitted yet.</p>
+        <EmptyState icon="chart" title="No submissions yet">No one has submitted yet.</EmptyState>
       )}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
           onClick={download}
-          className="min-h-12 flex-1 rounded-xl bg-emerald-700 px-4 font-semibold text-white"
+          className="btn btn-primary flex-1"
         >
-          ⬇ Download Excel
+          <Icon name="download" size={18} />
+          Download Excel
         </button>
         <button
           onClick={regrade}
           disabled={busy}
-          className="min-h-12 flex-1 rounded-xl border border-slate-300 bg-white px-4 font-semibold disabled:opacity-50"
+          className="btn btn-secondary flex-1"
         >
-          {busy ? "Re-grading…" : "↻ Re-grade all"}
+          <Icon name="refresh" size={18} />
+          {busy ? "Re-grading…" : "Re-grade all"}
         </button>
       </div>
       {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
 
-      <details className="rounded-xl bg-white p-3 shadow-sm">
-        <summary className="cursor-pointer text-sm font-semibold">
+      <details className="card !p-3">
+        <summary className="flex min-h-10 cursor-pointer items-center text-sm font-semibold">
           Passing mark: {passingPercent === null ? "not set" : `${passingPercent}%`}
         </summary>
         <ActionForm action={setPassingPercent} submitLabel="Save" resetOnSuccess={false} className="mt-3 space-y-2">
           <input type="hidden" name="exam_id" value={examId} />
           <input type="hidden" name="course_id" value={courseId} />
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex flex-wrap items-center gap-2 text-sm">
             <input
               name="passing_percent"
               type="number"
@@ -385,31 +381,32 @@ export function ResultsView({
               step="0.5"
               defaultValue={passingPercent ?? ""}
               placeholder="e.g. 60"
-              className="w-28 rounded-xl border border-slate-300 px-3 py-2"
+              className={`${inputClass} !w-28`}
             />
             % and above passes (blank = no pass/fail)
           </label>
         </ActionForm>
       </details>
 
-      <nav className="flex gap-1 rounded-xl bg-slate-200/70 p-1">
+      <nav className="tabs grid-cols-2" aria-label="Results view">
         {tabBtn("scores", `Scores (${students.length})`)}
         {tabBtn("items", `Item analysis (${analysis.items.length})`)}
       </nav>
 
       {tab === "scores" ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex gap-2">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search name or student no."
-              className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2"
+              aria-label="Search students"
+              className={`${inputClass} min-w-0 flex-1`}
             />
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
-              className="rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm"
+              className={`${inputClass} !w-auto`}
               aria-label="Sort"
             >
               <option value="name">Name</option>
@@ -418,7 +415,7 @@ export function ResultsView({
               <option value="section">Section</option>
             </select>
           </div>
-          <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <ul className="list">
             {rows.map((s) => {
               const a = s.attempt;
               const done = !!a?.submitted_at;
@@ -427,10 +424,10 @@ export function ResultsView({
               const body = (
                 <div className="flex items-center justify-between gap-2 p-3">
                   <div className="min-w-0">
-                    <p className={`truncate font-semibold ${a ? "" : "text-slate-400"}`}>{s.full_name || "—"}</p>
-                    <p className="truncate text-xs text-slate-500">
+                    <p className={`truncate font-semibold ${a ? "" : "text-ink-600"}`}>{s.full_name || "—"}</p>
+                    <p className="truncate text-xs text-ink-600">
                       {[s.student_no, s.section].filter(Boolean).join(" · ")}
-                      {isFlagged(s) && <span className="font-semibold text-amber-700"> · flagged</span>}
+                      {isFlagged(s) && <span className="font-semibold text-warning-800"> · flagged</span>}
                       {done && a!.end_reason && a!.end_reason !== "student" && (
                         <span> · {END_REASON_LABEL[a!.end_reason] ?? a!.end_reason}</span>
                       )}
@@ -442,17 +439,17 @@ export function ResultsView({
                         <p className="font-bold tabular-nums">
                           {Number(a!.score)}/{Number(a!.max_score)}
                         </p>
-                        <p className="text-xs tabular-nums text-slate-600">
+                        <p className="text-xs tabular-nums text-ink-600">
                           {round1(p!)}%
                           {passed !== null && (
-                            <span className={passed ? " text-emerald-700" : " font-semibold text-red-700"}>
+                            <span className={passed ? " font-semibold text-brand-800" : " font-semibold text-danger-700"}>
                               {passed ? " · Passed" : " · Failed"}
                             </span>
                           )}
                         </p>
                       </>
                     ) : (
-                      <p className="text-xs font-semibold text-slate-500">{a ? "In progress" : "Did not take"}</p>
+                      <p className="text-xs font-semibold text-ink-600">{a ? "In progress" : "Did not take"}</p>
                     )}
                   </div>
                 </div>
@@ -462,7 +459,7 @@ export function ResultsView({
                   {a ? (
                     <Link
                       href={`/instructor/courses/${courseId}/exams/${examId}/results/${a.id}`}
-                      className="block hover:bg-slate-50"
+                      className="block hover:bg-ink-50"
                     >
                       {body}
                     </Link>
@@ -473,18 +470,18 @@ export function ResultsView({
               );
             })}
           </ul>
-          <p className="text-center text-xs text-slate-500">Tap a student to see their answers.</p>
+          <p className="text-center text-xs text-ink-600">Tap a student to see their answers.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          <p className="text-xs text-slate-600">
+        <div className="space-y-3">
+          <p className="text-xs text-ink-600">
             <b>% correct</b>: share of points earned (blank counts as 0). <b>Discrimination</b>: % correct among the top{" "}
             27% minus the bottom 27%; 0.40+ very good, 0.30 good, 0.20 fair, below 0.20 poor, negative means check the
             key.
             {analysis.group_size === 0 && " Discrimination needs at least 4 submissions."} After editing an item&apos;s
             key, tap <b>Re-grade all</b>.
           </p>
-          <ol className="space-y-2">
+          <ol className="space-y-3">
             {analysis.items.map((it, i) => (
               <ItemCard
                 key={it.item_id}

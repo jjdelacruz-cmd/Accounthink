@@ -29,18 +29,18 @@ export function ResetPasswordButton({ userId, name }: { userId: string; name: st
             setResult(res.error ? { error: res.error } : { password });
           });
         }}
-        className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
+        className="btn btn-secondary btn-sm"
       >
         {pending ? "Resetting…" : "Reset password"}
       </button>
       {result?.password && (
-        <p className="rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
+        <p className="rounded-chip bg-brand-50 px-2 py-1 text-xs text-brand-900">
           New password: <b className="select-all font-mono text-sm">{result.password}</b>
           <br />
           Give this to {name}. It&apos;s shown only once; they can change it under Account.
         </p>
       )}
-      {result?.error && <p className="text-xs text-red-700">{result.error}</p>}
+      {result?.error && <p className="text-xs text-danger-700">{result.error}</p>}
     </div>
   );
 }

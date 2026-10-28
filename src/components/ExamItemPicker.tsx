@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { addExamItems } from "@/app/actions/exams";
-import { Button, Notice } from "@/components/ui";
+import { Button, EmptyState, Notice } from "@/components/ui";
 import { DIFFICULTY_LABEL, ITEM_TYPE_LABEL, type Difficulty, type ItemType } from "@/lib/items";
 
 export type PickerItem = {
@@ -17,7 +17,7 @@ export type PickerItem = {
   batch_label: string | null;
 };
 
-const sel = "rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm";
+const sel = "input input-sm";
 
 export function ExamItemPicker({ examId, courseId, items }: { examId: string; courseId: string; items: PickerItem[] }) {
   const router = useRouter();
@@ -60,7 +60,11 @@ export function ExamItemPicker({ examId, courseId, items }: { examId: string; co
   };
 
   if (items.length === 0) {
-    return <p className="text-sm text-slate-500">Every active item in the bank is already in this exam.</p>;
+    return (
+      <EmptyState icon="layers" title="Nothing left to add">
+        Every active item in the bank is already in this exam.
+      </EmptyState>
+    );
   }
 
   return (
@@ -104,29 +108,29 @@ export function ExamItemPicker({ examId, courseId, items }: { examId: string; co
       </div>
 
       <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-600">{shown.length} shown</span>
+        <span className="text-ink-600">{shown.length} shown</span>
         <button
           type="button"
           onClick={() => setPicked(new Set([...picked, ...shown.map((i) => i.id)]))}
-          className="font-semibold text-emerald-700"
+          className="btn btn-ghost btn-sm"
         >
           Select all shown
         </button>
       </div>
 
-      <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200">
+      <ul className="list max-h-[60vh] overflow-y-auto">
         {shown.map((i) => (
           <li key={i.id}>
-            <label className="flex cursor-pointer items-start gap-3 p-3">
+            <label className="flex min-h-12 cursor-pointer items-start gap-3 p-3 hover:bg-ink-50 has-[:checked]:bg-brand-50">
               <input
                 type="checkbox"
                 checked={picked.has(i.id)}
                 onChange={() => toggle(i.id)}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-700"
+                className="mt-0.5 shrink-0"
               />
               <span className="min-w-0">
                 <span className="line-clamp-2 text-sm">{i.stem}</span>
-                <span className="block text-xs text-slate-500">
+                <span className="block text-xs text-ink-600">
                   {ITEM_TYPE_LABEL[i.type]} · {DIFFICULTY_LABEL[i.difficulty]} · {Number(i.points)} pt
                   {i.topic ? ` · ${i.topic}` : ""}
                 </span>
@@ -140,7 +144,7 @@ export function ExamItemPicker({ examId, courseId, items }: { examId: string; co
       <Button
         type="button"
         disabled={pending || picked.size === 0}
-        className="sticky bottom-3 w-full shadow-lg"
+        className="sticky bottom-3 w-full shadow-pop"
         onClick={() =>
           start(async () => {
             setError(undefined);

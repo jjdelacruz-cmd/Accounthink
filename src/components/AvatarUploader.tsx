@@ -73,7 +73,7 @@ export function AvatarUploader({ name, avatar }: { name: string; avatar: string 
             type="button"
             disabled={pending || !ready}
             onClick={() => input.current?.click()}
-            className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold disabled:opacity-50"
+            className="btn btn-secondary btn-sm"
           >
             {pending ? "Saving…" : preview ? "Change photo" : "Add a photo"}
           </button>
@@ -82,16 +82,16 @@ export function AvatarUploader({ name, avatar }: { name: string; avatar: string 
               type="button"
               disabled={pending}
               onClick={() => save(null)}
-              className="min-h-11 rounded-xl px-3 text-sm font-semibold text-red-700 disabled:opacity-50"
+              className="btn btn-quiet-danger btn-sm"
             >
               Remove
             </button>
           )}
         </div>
         {status && (
-          <p className={`text-xs font-semibold ${status.ok ? "text-emerald-700" : "text-red-700"}`}>{status.text}</p>
+          <p role={status.ok ? "status" : "alert"} className={`text-xs font-semibold ${status.ok ? "text-brand-800" : "text-danger-700"}`}>{status.text}</p>
         )}
-        <p className="text-xs text-slate-500">A clear photo of your face. Your instructors can see it.</p>
+        <p className="text-xs text-ink-600">A clear photo of your face. Your instructors can see it.</p>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteBatch } from "@/app/actions/items";
+import { Icon } from "@/components/icons";
 import { Notice } from "@/components/ui";
 
 export type BatchRow = { id: string; label: string; source: string; created_at: string; count: number };
@@ -44,42 +45,45 @@ export function UploadsPanel({
   };
 
   return (
-    <details className="rounded-2xl border border-slate-200 bg-white shadow-sm" open={!!activeBatch}>
-      <summary className="cursor-pointer px-4 py-3 font-semibold">
-        Uploads <span className="font-normal text-slate-500">({batches.length})</span>
+    <details className="card group !p-0" open={!!activeBatch}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
+        <span>
+          Uploads <span className="font-normal text-ink-600">({batches.length})</span>
+        </span>
+        <Icon name="chevron-down" size={18} className="text-ink-500 group-open:rotate-180" />
       </summary>
       <div className="space-y-2 px-4 pb-4">
         {notice && <Notice kind={notice.kind}>{notice.text}</Notice>}
-        {batches.length === 0 && <p className="text-sm text-slate-500">No uploads yet. Use Import to add questions in bulk.</p>}
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+        {batches.length === 0 && <p className="text-sm text-ink-600">No uploads yet. Use Import to add questions in bulk.</p>}
+        <ul className="list">
           {batches.map((b) => (
-            <li key={b.id} className={`flex flex-wrap items-center justify-between gap-2 p-3 ${activeBatch === b.id ? "bg-emerald-50" : ""}`}>
+            <li key={b.id} className={`flex flex-wrap items-center justify-between gap-2 p-3 ${activeBatch === b.id ? "bg-brand-50" : ""}`}>
               <div className="min-w-0">
                 <p className="truncate font-semibold">{b.label}</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-ink-600">
                   {b.count} question{b.count === 1 ? "" : "s"} · {b.source === "sheet" ? "Excel/CSV" : "Pasted"} · {when(b.created_at)}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <Link href={`${base}?batch=${b.id}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold">
+                <Link href={`${base}?batch=${b.id}`} className="btn btn-secondary btn-sm">
                   Show
                 </Link>
                 <button
                   disabled={pending}
                   onClick={() => remove(b)}
-                  className="rounded-lg px-3 py-1.5 text-sm font-semibold text-red-700 disabled:opacity-50"
+                  className="btn btn-quiet-danger btn-sm"
                 >
                   Delete upload
                 </button>
               </div>
             </li>
           ))}
-          <li className={`flex items-center justify-between gap-2 p-3 ${activeBatch === "none" ? "bg-emerald-50" : ""}`}>
+          <li className={`flex items-center justify-between gap-2 p-3 ${activeBatch === "none" ? "bg-brand-50" : ""}`}>
             <div>
               <p className="font-semibold">Added individually / earlier imports</p>
-              <p className="text-xs text-slate-500">{individualCount} question{individualCount === 1 ? "" : "s"}</p>
+              <p className="text-xs text-ink-600">{individualCount} question{individualCount === 1 ? "" : "s"}</p>
             </div>
-            <Link href={`${base}?batch=none`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold">
+            <Link href={`${base}?batch=none`} className="btn btn-secondary btn-sm">
               Show
             </Link>
           </li>

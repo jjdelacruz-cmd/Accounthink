@@ -1,14 +1,15 @@
-import Link from "next/link";
+import type { IconName } from "@/components/icons";
+import { BackLink, PageTitle, TabLink } from "@/components/ui";
 
 type Key = "items" | "exams" | "scores" | "students" | "announcements";
 
 // Short labels and an icon above each, so all five fit on one row of a small phone.
-const TABS: { key: Key; label: string; icon: string }[] = [
-  { key: "items", label: "Items", icon: "🗂" },
-  { key: "exams", label: "Exams", icon: "📝" },
-  { key: "scores", label: "Scores", icon: "📊" },
-  { key: "students", label: "Students", icon: "👥" },
-  { key: "announcements", label: "News", icon: "📣" },
+const TABS: { key: Key; label: string; icon: IconName }[] = [
+  { key: "items", label: "Items", icon: "layers" },
+  { key: "exams", label: "Exams", icon: "clipboard" },
+  { key: "scores", label: "Scores", icon: "chart" },
+  { key: "students", label: "Students", icon: "users" },
+  { key: "announcements", label: "News", icon: "megaphone" },
 ];
 
 export function CourseNav({
@@ -20,28 +21,19 @@ export function CourseNav({
 }) {
   return (
     <div className="space-y-3">
-      <Link href="/instructor" className="text-sm font-medium text-emerald-700">
-        ← My courses
-      </Link>
-      <div>
-        <p className="text-sm font-semibold text-emerald-700">{course.code}</p>
-        <h1 className="text-xl font-bold">{course.title}</h1>
-      </div>
-      <nav className="grid grid-cols-5 gap-1 rounded-xl bg-slate-200/70 p-1" aria-label="Course sections">
+      <BackLink href="/instructor">My courses</BackLink>
+      <PageTitle eyebrow={course.code}>{course.title}</PageTitle>
+      <nav className="tabs grid-cols-5" aria-label="Course sections">
         {TABS.map((t) => (
-          <Link
+          <TabLink
             key={t.key}
             href={`/instructor/courses/${course.id}/${t.key}`}
-            aria-current={active === t.key ? "page" : undefined}
-            className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1.5 text-[11px] font-semibold leading-tight sm:min-h-11 sm:flex-row sm:gap-1.5 sm:text-sm ${
-              active === t.key ? "bg-white text-emerald-800 shadow-sm" : "text-slate-600 active:bg-white/60"
-            }`}
+            active={active === t.key}
+            icon={t.icon}
+            className="min-h-14 flex-col gap-0.5 px-0 text-[11px] tracking-tight min-[360px]:text-xs sm:min-h-11 sm:flex-row sm:gap-1.5 sm:text-sm"
           >
-            <span aria-hidden className="text-base leading-none sm:text-sm">
-              {t.icon}
-            </span>
-            <span className="max-w-full truncate">{t.label}</span>
-          </Link>
+            {t.label}
+          </TabLink>
         ))}
       </nav>
     </div>

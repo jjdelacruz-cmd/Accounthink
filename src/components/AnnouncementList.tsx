@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteAnnouncement } from "@/app/actions/notify";
-import { Notice } from "@/components/ui";
+import { EmptyState, Notice } from "@/components/ui";
 import { formatManila } from "@/lib/time";
 
 export type AnnouncementRow = {
@@ -20,12 +20,17 @@ export function AnnouncementList({ courseId, items }: { courseId: string; items:
   const router = useRouter();
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string>();
-  if (items.length === 0) return <p className="text-sm text-slate-600">No announcements yet.</p>;
+  if (items.length === 0)
+    return (
+      <EmptyState icon="megaphone" title="No announcements yet">
+        Post one above and your students will see it on their dashboard.
+      </EmptyState>
+    );
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {err && <Notice kind="error">{err}</Notice>}
       {items.map((a) => (
-        <div key={a.id} className="space-y-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div key={a.id} className="card space-y-1">
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold">{a.title}</p>
             <button
@@ -39,13 +44,13 @@ export function AnnouncementList({ courseId, items }: { courseId: string; items:
                   router.refresh();
                 });
               }}
-              className="shrink-0 text-sm font-semibold text-red-700 disabled:opacity-50"
+              className="btn btn-quiet-danger btn-sm -mr-2 -mt-1 shrink-0"
             >
               Delete
             </button>
           </div>
-          <p className="whitespace-pre-line text-sm text-slate-700">{a.body}</p>
-          <p className="text-xs text-slate-500">
+          <p className="whitespace-pre-line text-sm text-ink-700">{a.body}</p>
+          <p className="text-xs text-ink-600">
             {formatManila(a.created_at)} · {a.audience}
             {a.emailed_at ? ` · emailed ${a.emailed_count ?? 0}` : " · not emailed"}
           </p>

@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveItem } from "@/app/actions/items";
-import { Button, Notice } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Button, Notice, inputClass, labelClass } from "@/components/ui";
 import {
   CHOICE_KEYS,
   DIFFICULTY_LABEL,
@@ -18,9 +19,8 @@ import {
   type McqAnswer,
 } from "@/lib/items";
 
-const input =
-  "block w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20";
-const label = "mb-1 block text-sm font-medium text-slate-700";
+const input = inputClass;
+const label = labelClass;
 
 export function ItemEditor({ courseId, initial, topics }: { courseId: string; initial?: ItemDraft; topics: string[] }) {
   const router = useRouter();
@@ -111,12 +111,12 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {saved && <Notice kind="ok">Saved. Enter the next item.</Notice>}
 
       <div>
         <span className={label}>Type</span>
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-200/70 p-1 sm:grid-cols-4">
+        <div className="tabs grid-cols-2 sm:grid-cols-4">
           {(Object.keys(ITEM_TYPE_LABEL) as ItemType[]).map((t) => (
             <button
               key={t}
@@ -125,9 +125,8 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
                 setType(t);
                 if (t === "essay" && points === "1") setPoints("5"); // essays are usually worth more
               }}
-              className={`rounded-lg px-2 py-2 text-sm font-semibold ${
-                type === t ? "bg-white text-emerald-800 shadow-sm" : "text-slate-600"
-              }`}
+              aria-pressed={type === t}
+              className="tab"
             >
               {ITEM_TYPE_LABEL[t]}
             </button>
@@ -151,7 +150,7 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
                 aria-label={`Choice ${c.key} is correct`}
                 checked={correct === c.key}
                 onChange={() => setCorrect(c.key)}
-                className="h-6 w-6 shrink-0 accent-emerald-700"
+                className="!h-6 !w-6 shrink-0"
               />
               <span className="w-5 shrink-0 font-semibold">{CHOICE_KEYS[i]}.</span>
               <input
@@ -169,9 +168,9 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
                     setChoices(choices.filter((x) => x.key !== c.key));
                     if (correct === c.key) setCorrect("");
                   }}
-                  className="shrink-0 rounded-lg px-2 py-2 text-slate-500"
+                  className="btn btn-quiet !min-h-10 !min-w-10 shrink-0 !px-2"
                 >
-                  ✕
+                  <Icon name="x" size={18} />
                 </button>
               )}
             </div>
@@ -185,7 +184,7 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
                 const key = CHOICE_KEYS.find((k) => !used.has(k)) ?? `X${choices.length}`;
                 setChoices([...choices, { key, text: "" }]);
               }}
-              className="text-sm font-semibold text-emerald-700"
+              className="btn btn-ghost btn-sm"
             >
               + Add choice
             </button>
@@ -225,9 +224,9 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
                   type="button"
                   aria-label={`Remove answer ${i + 1}`}
                   onClick={() => setEnumRows(enumRows.filter((_, j) => j !== i))}
-                  className="shrink-0 rounded-lg px-2 py-2 text-slate-500"
+                  className="btn btn-quiet !min-h-10 !min-w-10 shrink-0 !px-2"
                 >
-                  ✕
+                  <Icon name="x" size={18} />
                 </button>
               )}
             </div>
@@ -235,16 +234,15 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
           <button
             type="button"
             onClick={() => setEnumRows([...enumRows, ""])}
-            className="text-sm font-semibold text-emerald-700"
+            className="btn btn-ghost btn-sm"
           >
             + Add answer
           </button>
-          <label className="flex items-center gap-2 pt-1 text-sm">
+          <label className="flex min-h-10 items-center gap-2 pt-1 text-sm">
             <input
               type="checkbox"
               checked={anyOrder}
               onChange={(e) => setAnyOrder(e.target.checked)}
-              className="h-5 w-5 accent-emerald-700"
             />
             Any order is correct
           </label>
@@ -261,7 +259,7 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
             placeholder="What a full-credit answer should mention"
             className={input}
           />
-          <span className="mt-1 block text-xs text-slate-500">
+          <span className="mt-1 block text-xs text-ink-600">
             Essays are checked by you after the exam (Exam → Check answers). Give the essay its points below.
           </span>
         </label>
@@ -298,7 +296,7 @@ export function ItemEditor({ courseId, initial, topics }: { courseId: string; in
         <label className="block">
           <span className={label}>Points</span>
           {type === "enumeration" ? (
-            <input value={enumRows.filter((r) => r.trim()).length} disabled className={`${input} bg-slate-100`} />
+            <input value={enumRows.filter((r) => r.trim()).length} disabled className={input} />
           ) : (
             <input
               type="number"

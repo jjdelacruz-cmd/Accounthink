@@ -23,16 +23,16 @@ export function LoginForm({ confirmError }: { confirmError?: boolean }) {
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Signing in…" : "Sign in"}
       </Button>
-      <details className="text-center text-sm text-slate-600">
-        <summary className="cursor-pointer">Forgot your password?</summary>
+      <details className="text-center text-sm text-ink-600">
+        <summary className="mx-auto flex min-h-10 w-fit cursor-pointer items-center px-2 font-semibold text-brand-800">Forgot your password?</summary>
         <p className="mt-1">
           Ask your instructor to reset it. You&apos;ll get a temporary password, which you can change under
           <b> Account</b> after signing in.
         </p>
       </details>
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-ink-600">
         New here?{" "}
-        <Link href="/signup" className="font-semibold text-emerald-700">
+        <Link href="/signup" className="font-semibold text-brand-800 hover:underline">
           Create an account
         </Link>
       </p>
@@ -52,7 +52,7 @@ export function SignupForm() {
     return (
       <div className="space-y-4">
         <Notice kind="ok">{state.message}</Notice>
-        <Link href="/login" className="block text-center font-semibold text-emerald-700">
+        <Link href="/login" className="block text-center font-semibold text-brand-800 hover:underline">
           Go to sign in
         </Link>
       </div>
@@ -68,9 +68,9 @@ export function SignupForm() {
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Creating account…" : "Create account"}
       </Button>
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-ink-600">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-emerald-700">
+        <Link href="/login" className="font-semibold text-brand-800 hover:underline">
           Sign in
         </Link>
       </p>

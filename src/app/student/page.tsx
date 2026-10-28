@@ -4,7 +4,8 @@ import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ScoreUpdates, type ScoreUpdate } from "@/components/ScoreUpdates";
-import { Card, Field } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Badge, Card, EmptyState, Field, PageTitle, SectionTitle } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatManila } from "@/lib/time";
@@ -71,22 +72,28 @@ export default async function StudentHome() {
       <ScoreUpdates updates={scoreUpdates} />
       {announcements.length > 0 && (
         <section className="space-y-2" aria-label="Announcements">
-          <h2 className="font-semibold">Announcements</h2>
+          <SectionTitle>Announcements</SectionTitle>
           {announcements.map((a) => (
-            <details key={a.id} className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
-              <summary className="cursor-pointer">
-                <span className="font-semibold">{a.title}</span>
-                <span className="block text-xs text-slate-500">
-                  {a.courses?.code} · {formatManila(a.created_at)}
+            <details key={a.id} className="group rounded-card border border-brand-200 bg-brand-50 p-3 open:bg-white">
+              <summary className="flex cursor-pointer list-none items-start gap-3 [&::-webkit-details-marker]:hidden">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-800">
+                  <Icon name="megaphone" size={16} />
                 </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">{a.title}</span>
+                  <span className="block text-xs text-ink-600">
+                    {a.courses?.code} · {formatManila(a.created_at)}
+                  </span>
+                </span>
+                <Icon name="chevron-down" size={18} className="mt-1.5 text-ink-500 group-open:rotate-180" />
               </summary>
-              <p className="mt-2 whitespace-pre-line text-sm text-slate-800">{a.body}</p>
+              <p className="mt-2 whitespace-pre-line pl-11 text-sm text-ink-800">{a.body}</p>
             </details>
           ))}
         </section>
       )}
       <Card>
-        <h2 className="mb-3 font-semibold">Join a class</h2>
+        <SectionTitle className="mb-3">Join a class</SectionTitle>
         <ActionForm action={joinSection} submitLabel="Join" pendingLabel="Joining…">
           <Field
             label="Join code from your instructor"
@@ -101,15 +108,17 @@ export default async function StudentHome() {
         </ActionForm>
       </Card>
 
-      <h1 className="text-xl font-bold">My classes</h1>
+      <PageTitle>My classes</PageTitle>
       {memberships.length === 0 ? (
-        <p className="text-sm text-slate-600">You haven&apos;t joined any class yet.</p>
+        <EmptyState icon="users" title="No classes yet">
+          You haven&apos;t joined any class yet.
+        </EmptyState>
       ) : (
         memberships.map(({ section: s }) => (
           <Card key={s.id}>
-            <p className="text-sm font-semibold text-emerald-700">{s.course.code}</p>
-            <p className="font-semibold">{s.course.title}</p>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm font-semibold text-brand-700">{s.course.code}</p>
+            <h2 className="text-heading font-semibold">{s.course.title}</h2>
+            <p className="text-sm text-ink-600">
               {s.name}
               {s.school_year ? ` · ${s.school_year}` : ""}
               {s.semester ? ` · ${s.semester} sem` : ""}
@@ -123,27 +132,23 @@ export default async function StudentHome() {
 }
 
 function ExamList({ exams }: { exams: StudentExam[] }) {
-  if (exams.length === 0) return <p className="mt-2 text-sm text-slate-500">No exams yet.</p>;
+  if (exams.length === 0) return <p className="mt-3 rounded-control bg-ink-50 px-3 py-2 text-sm text-ink-600">No exams yet.</p>;
   return (
     <ul className="mt-3 space-y-2">
       {exams.map((e) => (
         <li key={e.id}>
-          <Link href={`/student/exams/${e.id}`} className="block rounded-xl border border-slate-200 p-3 hover:border-emerald-300">
-          <div className="flex items-start justify-between gap-2">
-            <p className="font-semibold">{e.title}</p>
-            <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                e.status === "published" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
-              }`}
-            >
-              {e.status === "published" ? "Open" : "Closed"}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500">
-            {e.time_limit_minutes ? `${e.time_limit_minutes} min` : ""}
-            {e.opens_at ? ` · opens ${formatManila(e.opens_at)}` : ""}
-            {e.closes_at ? ` · closes ${formatManila(e.closes_at)}` : ""}
-          </p>
+          <Link href={`/student/exams/${e.id}`} className="row-link">
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-semibold">{e.title}</p>
+              <Badge tone={e.status === "published" ? "success" : "neutral"} className="shrink-0">
+                {e.status === "published" ? "Open" : "Closed"}
+              </Badge>
+            </div>
+            <p className="mt-0.5 text-xs text-ink-600">
+              {e.time_limit_minutes ? `${e.time_limit_minutes} min` : ""}
+              {e.opens_at ? ` · opens ${formatManila(e.opens_at)}` : ""}
+              {e.closes_at ? ` · closes ${formatManila(e.closes_at)}` : ""}
+            </p>
           </Link>
         </li>
       ))}

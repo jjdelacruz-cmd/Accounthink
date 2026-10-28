@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { BackLink, LinkButton } from "@/components/ui";
 import { LiveMonitor } from "@/components/LiveMonitor";
 import { getOwnedCourse } from "@/lib/courses";
 
@@ -21,16 +21,11 @@ export default async function MonitorPage({
 
   return (
     <AppShell profile={profile}>
-      <Link href={`/instructor/courses/${courseId}/exams/${examId}`} className="text-sm font-medium text-emerald-700">
-        ← {course.code} · {exam.title}
-      </Link>
+      <BackLink href={`/instructor/courses/${courseId}/exams/${examId}`}>{course.code} · {exam.title}</BackLink>
       <LiveMonitor examId={examId} />
-      <Link
-        href={`/instructor/courses/${courseId}/exams/${examId}/results`}
-        className="block rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold"
-      >
+      <LinkButton href={`/instructor/courses/${courseId}/exams/${examId}/results`} variant="secondary" block icon="chart">
         Results &amp; item analysis →
-      </Link>
+      </LinkButton>
     </AppShell>
   );
 }

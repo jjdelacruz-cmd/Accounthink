@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui";
 
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -50,35 +51,35 @@ export function InstallPrompt() {
   };
 
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+    <div className="flex items-start gap-3 rounded-card border border-brand-200 bg-brand-50 p-3 sm:p-4">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icons/icon-192.png" alt="" width={40} height={40} className="shrink-0 rounded-xl" />
+      <img src="/icons/icon-192.png" alt="" width={40} height={40} className="shrink-0 rounded-control" />
       <div className="min-w-0 flex-1 text-sm">
-        <p className="font-semibold text-emerald-900">Install Accounthink</p>
+        <p className="font-semibold text-brand-900">Install Accounthink</p>
         {ios ? (
-          <p className="text-emerald-900">
+          <p className="text-brand-900">
             Tap <b>Share</b> <span aria-hidden>⎋</span> then <b>Add to Home Screen</b> to open it like an app.
           </p>
         ) : (
-          <p className="text-emerald-900">Add it to your home screen and open it like an app.</p>
+          <p className="text-brand-900">Add it to your home screen and open it like an app.</p>
         )}
         <div className="mt-2 flex gap-2">
           {deferred && (
-            <button
+            <Button
+              size="sm"
               onClick={async () => {
                 await deferred.prompt();
                 await deferred.userChoice;
                 setDeferred(null);
                 setHidden(true);
               }}
-              className="rounded-lg bg-emerald-700 px-3 py-1.5 font-semibold text-white"
             >
               Install
-            </button>
+            </Button>
           )}
-          <button onClick={dismiss} className="rounded-lg px-3 py-1.5 font-medium text-emerald-900">
+          <Button size="sm" variant="ghost" onClick={dismiss}>
             Not now
-          </button>
+          </Button>
         </div>
       </div>
     </div>

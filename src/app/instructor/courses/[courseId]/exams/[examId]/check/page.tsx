@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { BackLink } from "@/components/ui";
 import { CheckAnswersView } from "@/components/CheckAnswersView";
 import { getOwnedCourse } from "@/lib/courses";
 
@@ -24,9 +24,7 @@ export default async function CheckAnswersPage({
 
   return (
     <AppShell profile={profile}>
-      <Link href={`/instructor/courses/${courseId}/exams/${examId}`} className="text-sm font-medium text-emerald-700">
-        ← {course.code} · {exam.title}
-      </Link>
+      <BackLink href={`/instructor/courses/${courseId}/exams/${examId}`}>{course.code} · {exam.title}</BackLink>
       <CheckAnswersView
         examId={examId}
         courseId={courseId}

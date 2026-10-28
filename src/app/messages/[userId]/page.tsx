@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { BackLink } from "@/components/ui";
 import { ThreadView } from "@/components/ThreadView";
 import { requireRole } from "@/lib/auth";
 import type { Thread } from "@/lib/messages";
@@ -16,9 +16,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ userId:
   if (error || !data) notFound();
   return (
     <AppShell profile={profile}>
-      <Link href="/messages" className="text-sm font-medium text-emerald-700">
-        ← All messages
-      </Link>
+      <BackLink href="/messages">All messages</BackLink>
       <ThreadView initial={data as Thread} />
     </AppShell>
   );

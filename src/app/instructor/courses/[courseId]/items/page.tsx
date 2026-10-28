@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { CourseNav } from "@/components/CourseNav";
 import { ItemList, type ItemRow } from "@/components/ItemList";
+import { Button, Card, LinkButton, Notice } from "@/components/ui";
 import { UploadsPanel, type BatchRow } from "@/components/UploadsPanel";
 import { getOwnedCourse } from "@/lib/courses";
 import { DIFFICULTY_LABEL, ITEM_TYPE_LABEL, type Answer } from "@/lib/items";
@@ -66,32 +67,24 @@ export default async function ItemBankPage({
   ).map(({ items: c, ...b }) => ({ ...b, count: c[0]?.count ?? 0 }));
   const activeBatch = f.batch === "none" ? "Added individually / earlier imports" : batches.find((b) => b.id === f.batch)?.label;
 
-  const select = "rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm";
+  const select = "input input-sm";
 
   return (
     <AppShell profile={profile}>
       <CourseNav course={course} active="items" />
 
       {f.imported && (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <Notice kind="ok">
           Imported {f.imported} question{f.imported === "1" ? "" : "s"}
           {activeBatch && f.batch !== "none" ? ` as “${activeBatch}”` : ""}.
-        </p>
+        </Notice>
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        <Link
-          href={`/instructor/courses/${courseId}/items/new`}
-          className="rounded-xl bg-emerald-700 px-4 py-3 text-center font-semibold text-white"
-        >
-          + New item
-        </Link>
-        <Link
-          href={`/instructor/courses/${courseId}/items/import`}
-          className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold"
-        >
-          ⬆ Import
-        </Link>
+        <LinkButton href={`/instructor/courses/${courseId}/items/new`}>+ New item</LinkButton>
+        <LinkButton href={`/instructor/courses/${courseId}/items/import`} variant="secondary" icon="upload">
+          Import
+        </LinkButton>
       </div>
 
       <UploadsPanel
@@ -101,7 +94,7 @@ export default async function ItemBankPage({
         activeBatch={f.batch}
       />
 
-      <form className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Card className="!p-3"><form className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <input
           name="q"
           defaultValue={f.q}
@@ -139,19 +132,19 @@ export default async function ItemBankPage({
           <option value="">Active</option>
           <option value="1">Archived</option>
         </select>
-        <button className="col-span-2 rounded-xl border border-slate-300 bg-white py-2 text-sm font-semibold sm:col-span-4">
+        <Button variant="secondary" size="sm" className="col-span-2 sm:col-span-4">
           Apply filters
-        </button>
-      </form>
+        </Button>
+      </form></Card>
 
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-ink-600">
         {items.length} item{items.length === 1 ? "" : "s"}
         {activeBatch ? ` in “${activeBatch}”` : ""}
         {items.length === 300 ? " (showing first 300)" : ""}
         {(f.batch || f.q || f.type || f.topic || f.difficulty || f.archived) && (
           <>
             {" · "}
-            <Link href={`/instructor/courses/${courseId}/items`} className="font-semibold text-emerald-700">
+            <Link href={`/instructor/courses/${courseId}/items`} className="font-semibold text-brand-800 hover:underline">
               Clear filters
             </Link>
           </>

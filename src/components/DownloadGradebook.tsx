@@ -2,15 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { loadAllGradebooks } from "@/app/actions/gradebook";
-import { Notice } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { Button, Notice } from "@/components/ui";
 import { downloadXlsx } from "@/lib/downloadXlsx";
 import { buildGradebookWorkbook, type Gradebook } from "@/lib/gradebook";
 import { safeFileName } from "@/lib/results";
 
 type Props = { className?: string };
-
-const base =
-  "min-h-12 w-full rounded-xl px-4 text-base font-semibold disabled:opacity-50";
 
 /** One subject: all sections (a sheet each), or just one section. */
 export function DownloadGradebook({
@@ -30,8 +28,10 @@ export function DownloadGradebook({
   const [error, setError] = useState<string>();
   return (
     <div className="space-y-2">
-      <button
+      <Button
         type="button"
+        variant={secondary ? "secondary" : "primary"}
+        block
         disabled={pending}
         onClick={() =>
           start(async () => {
@@ -44,14 +44,14 @@ export function DownloadGradebook({
             }
           })
         }
-        className={`${base} ${secondary ? "border border-slate-300 bg-white text-slate-800" : "bg-emerald-700 text-white"}`}
       >
+        <Icon name="download" size={18} />
         {pending
           ? "Making the file…"
           : sectionName
-            ? `⬇ Excel: only ${sectionName}`
-            : `⬇ Excel: ${book.course.code}${book.sections.length > 1 ? ", every section (1 sheet each)" : ""}`}
-      </button>
+            ? `Excel: only ${sectionName}`
+            : `Excel: ${book.course.code}${book.sections.length > 1 ? ", every section (1 sheet each)" : ""}`}
+      </Button>
       {error && <Notice kind="error">{error}</Notice>}
     </div>
   );
@@ -63,8 +63,10 @@ export function DownloadAllGradebooks({ className = "" }: Props) {
   const [error, setError] = useState<string>();
   return (
     <div className={`space-y-2 ${className}`}>
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="sm"
         disabled={pending}
         onClick={() =>
           start(async () => {
@@ -81,10 +83,11 @@ export function DownloadAllGradebooks({ className = "" }: Props) {
             }
           })
         }
-        className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold disabled:opacity-50 sm:w-auto"
+        className="w-full sm:w-auto"
       >
-        {pending ? "Preparing…" : "⬇ Scores of all my subjects (Excel)"}
-      </button>
+        <Icon name="download" size={16} />
+        {pending ? "Preparing…" : "Scores of all my subjects (Excel)"}
+      </Button>
       {error && <Notice kind="error">{error}</Notice>}
     </div>
   );

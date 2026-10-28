@@ -55,7 +55,7 @@ export function ActionForm({
             name={secondarySubmit.name}
             value={secondarySubmit.value}
             disabled={pending}
-            className="w-full border-emerald-700 text-emerald-800 sm:w-auto"
+            className="w-full border-brand-700 text-brand-800 sm:w-auto"
           >
             {secondarySubmit.label}
           </Button>

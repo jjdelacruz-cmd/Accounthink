@@ -13,7 +13,8 @@ import { CheckersCard } from "@/components/CheckersCard";
 import { EmailReminderButton } from "@/components/EmailReminderButton";
 import { ExamItemPicker, type PickerItem } from "@/components/ExamItemPicker";
 import { ExamStatusBadge } from "@/components/ExamStatusBadge";
-import { Card, Field } from "@/components/ui";
+import { Icon } from "@/components/icons";
+import { BackLink, Card, Field, LinkButton, PageTitle, SectionTitle, buttonClass, labelClass } from "@/components/ui";
 import { FEEDBACK_LABEL, type FeedbackMode } from "@/lib/attempts";
 import { getOwnedCourse } from "@/lib/courses";
 import { KIND_LABEL } from "@/lib/exams";
@@ -45,8 +46,8 @@ type ExamItemRow = {
   items: { id: string; type: ItemType; stem: string; topic: string | null; difficulty: Difficulty; points: number };
 };
 
-const inputCls = "block w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-base";
-const labelCls = "mb-1 block text-sm font-medium text-slate-700";
+const inputCls = "input";
+const labelCls = labelClass;
 
 export default async function ExamBuilderPage({
   params,
@@ -120,44 +121,34 @@ export default async function ExamBuilderPage({
 
   return (
     <AppShell profile={profile}>
-      <Link href={`/instructor/courses/${courseId}/exams`} className="text-sm font-medium text-emerald-700">
-        ← {course.code} exams
-      </Link>
+      <BackLink href={`/instructor/courses/${courseId}/exams`}>{course.code} exams</BackLink>
 
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase text-slate-500">{KIND_LABEL[exam.kind] ?? exam.kind}</p>
-          <h1 className="text-xl font-bold">{exam.title}</h1>
-          <p className="text-sm text-slate-600">
-            {examItems.length} items · {totalPoints} points
-            {Object.keys(counts).length > 0 &&
-              ` (${Object.entries(counts)
-                .map(([t, n]) => `${n} ${ITEM_TYPE_LABEL[t as ItemType].toLowerCase()}`)
-                .join(", ")})`}
-          </p>
-        </div>
-        <ExamStatusBadge status={exam.status} />
+      <div className="space-y-1">
+        <PageTitle eyebrow={KIND_LABEL[exam.kind] ?? exam.kind} actions={<ExamStatusBadge status={exam.status} />}>
+          {exam.title}
+        </PageTitle>
+        <p className="text-sm text-ink-600">
+          {examItems.length} items · {totalPoints} points
+          {Object.keys(counts).length > 0 &&
+            ` (${Object.entries(counts)
+              .map(([t, n]) => `${n} ${ITEM_TYPE_LABEL[t as ItemType].toLowerCase()}`)
+              .join(", ")})`}
+        </p>
       </div>
 
       {!isDraft && (
         <div className="grid grid-cols-2 gap-2">
-          <Link
-            href={`/instructor/courses/${courseId}/exams/${examId}/monitor`}
-            className="rounded-xl bg-slate-900 px-4 py-4 text-center font-semibold text-white"
-          >
+          <LinkButton href={`/instructor/courses/${courseId}/exams/${examId}/monitor`} variant="secondary" icon="radio" className="min-h-14">
             Live monitor
-          </Link>
-          <Link
-            href={`/instructor/courses/${courseId}/exams/${examId}/results`}
-            className="rounded-xl bg-emerald-700 px-4 py-4 text-center font-semibold text-white"
-          >
+          </LinkButton>
+          <LinkButton href={`/instructor/courses/${courseId}/exams/${examId}/results`} icon="chart" className="min-h-14">
             Results &amp; analysis
-          </Link>
+          </LinkButton>
           {checkItems.length > 0 && (
             <Link
               href={`/instructor/courses/${courseId}/exams/${examId}/check`}
-              className={`col-span-2 rounded-xl border px-4 py-3 text-center font-semibold ${
-                toCheck > 0 ? "border-amber-300 bg-amber-50 text-amber-900" : "border-slate-300 bg-white"
+              className={`col-span-2 ${buttonClass({ variant: "secondary" })} ${
+                toCheck > 0 ? "!border-warning-300 !bg-warning-50 !text-warning-900" : ""
               }`}
             >
               Check answers{toCheck > 0 ? ` · ${toCheck} waiting` : " (identification, enumeration, essay)"}
@@ -179,12 +170,17 @@ export default async function ExamBuilderPage({
                   [examItems.length > 0, "At least one item added"],
                 ] as const
               ).map(([ok, text]) => (
-                <li key={text} className={ok ? "text-emerald-800" : "text-slate-500"}>
-                  {ok ? "✓" : "○"} {text}
+                <li key={text} className={`flex items-center gap-2 ${ok ? "text-brand-800" : "text-ink-600"}`}>
+                  {ok ? (
+                    <Icon name="check" size={16} />
+                  ) : (
+                    <span aria-hidden className="mx-[3px] h-2.5 w-2.5 rounded-full border-2 border-ink-400" />
+                  )}
+                  {text}
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-ink-600">
               Set these in <b>Settings</b> and <b>Items</b> below, then tap <b>Save &amp; publish</b>. Items are
               locked while published.
             </p>
@@ -213,7 +209,7 @@ export default async function ExamBuilderPage({
         )}
         {exam.status === "published" && <EmailReminderButton courseId={courseId} examId={examId} />}
         {!isDraft && (
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-ink-600">
             <b>{started}</b> student{started === 1 ? "" : "s"} started · <b>{submitted}</b> submitted
             {started > 0 && " · items are now locked for good"}
           </p>
@@ -222,7 +218,7 @@ export default async function ExamBuilderPage({
 
       {/* Settings */}
       <Card>
-        <h2 className="mb-3 font-semibold">Settings</h2>
+        <SectionTitle className="mb-3">Settings</SectionTitle>
         <ActionForm
           action={updateExamSettings}
           submitLabel="Save settings"
@@ -264,7 +260,7 @@ export default async function ExamBuilderPage({
               defaultValue={isoToManilaInput(exam.closes_at)}
             />
           </div>
-          <p className="-mt-1 text-xs text-slate-500">Leave blank to open/close manually with the buttons above.</p>
+          <p className="-mt-1 text-xs text-ink-600">Leave blank to open/close manually with the buttons above.</p>
           <label className="block">
             <span className={labelCls}>Instructions for students</span>
             <textarea name="instructions" rows={3} defaultValue={exam.instructions ?? ""} className={inputCls} />
@@ -273,17 +269,17 @@ export default async function ExamBuilderPage({
           <fieldset>
             <legend className={labelCls}>Sections taking this exam</legend>
             {sections.length === 0 ? (
-              <p className="text-sm text-slate-500">No sections yet. Add one from My courses.</p>
+              <p className="text-sm text-ink-600">No sections yet. Add one from My courses.</p>
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {sections.map((s) => (
-                  <label key={s.id} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-3">
+                  <label key={s.id} className="flex min-h-12 items-center gap-2 rounded-control border border-ink-300 bg-white px-3 py-2 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50">
                     <input
                       type="checkbox"
                       name="section_ids"
                       value={s.id}
                       defaultChecked={assignedIds.has(s.id)}
-                      className="h-5 w-5 accent-emerald-700"
+                     
                     />
                     <span className="font-medium">{s.name}</span>
                   </label>
@@ -316,8 +312,8 @@ export default async function ExamBuilderPage({
                 ],
               ] as const
             ).map(([name, text, on]) => (
-              <label key={name} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name={name} defaultChecked={on} className="h-5 w-5 accent-emerald-700" />
+              <label key={name} className="flex min-h-10 items-start gap-2.5 py-1 text-sm">
+                <input type="checkbox" name={name} defaultChecked={on} className="mt-0.5 shrink-0" />
                 {text}
               </label>
             ))}
@@ -345,7 +341,7 @@ export default async function ExamBuilderPage({
               </select>
             </label>
           </div>
-          <p className="-mt-1 text-xs text-slate-500">
+          <p className="-mt-1 text-xs text-ink-600">
             &ldquo;After the exam closes&rdquo; stops students who finish early from passing answers to classmates
             still taking it.
           </p>
@@ -365,15 +361,15 @@ export default async function ExamBuilderPage({
 
       {/* Items */}
       <Card className="space-y-3">
-        <h2 className="font-semibold">Items in this exam</h2>
-        {examItems.length === 0 && <p className="text-sm text-slate-500">No items yet. Add from the bank below.</p>}
-        <ol className="divide-y divide-slate-100">
+        <SectionTitle>Items in this exam</SectionTitle>
+        {examItems.length === 0 && <p className="rounded-control bg-ink-50 px-3 py-3 text-sm text-ink-600">No items yet. Add from the bank below.</p>}
+        <ol className="divide-y divide-ink-100">
           {examItems.map((r, i) => (
             <li key={r.items.id} className="flex items-start gap-2 py-2">
-              <span className="w-7 shrink-0 pt-0.5 text-right font-semibold text-slate-500">{i + 1}.</span>
+              <span className="w-7 shrink-0 pt-0.5 text-right font-semibold tabular-nums text-ink-600">{i + 1}.</span>
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-sm">{r.items.stem}</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-ink-600">
                   {ITEM_TYPE_LABEL[r.items.type]} · {DIFFICULTY_LABEL[r.items.difficulty]} · {Number(r.items.points)} pt
                   {r.items.topic ? ` · ${r.items.topic}` : ""}
                 </p>
@@ -388,17 +384,17 @@ export default async function ExamBuilderPage({
                       <button
                         aria-label={`Move ${dir}`}
                         disabled={(dir === "up" && i === 0) || (dir === "down" && i === examItems.length - 1)}
-                        className="rounded-lg px-2 py-2 text-slate-600 disabled:opacity-25"
+                        className="btn btn-quiet !min-h-10 !min-w-10 !px-2 disabled:!opacity-30"
                       >
-                        {dir === "up" ? "↑" : "↓"}
+                        <Icon name={dir === "up" ? "arrow-up" : "arrow-down"} size={18} />
                       </button>
                     </form>
                   ))}
                   <form action={removeExamItem}>
                     {hidden}
                     <input type="hidden" name="item_id" value={r.items.id} />
-                    <button aria-label="Remove from exam" className="rounded-lg px-2 py-2 text-red-600">
-                      ✕
+                    <button aria-label="Remove from exam" className="btn btn-quiet-danger !min-h-10 !min-w-10 !px-2">
+                      <Icon name="x" size={18} />
                     </button>
                   </form>
                 </div>
@@ -411,11 +407,8 @@ export default async function ExamBuilderPage({
       {isDraft && (
         <Card className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Add from item bank</h2>
-            <Link
-              href={`/instructor/courses/${courseId}/items/new`}
-              className="text-sm font-semibold text-emerald-700"
-            >
+            <SectionTitle>Add from item bank</SectionTitle>
+            <Link href={`/instructor/courses/${courseId}/items/new`} className="btn btn-ghost btn-sm">
               + New item
             </Link>
           </div>
@@ -426,7 +419,7 @@ export default async function ExamBuilderPage({
       {isDraft && (
         <form action={deleteExam} className="pt-2 text-center">
           {hidden}
-          <button className="text-sm font-medium text-red-600">Delete this draft exam</button>
+          <button className="btn btn-quiet-danger btn-sm">Delete this draft exam</button>
         </form>
       )}
     </AppShell>
