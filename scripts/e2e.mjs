@@ -774,6 +774,22 @@ ANSWER: Materiality`);
   await A3.page.reload();
   ok("Tapping Got it clears the notice for good", (await A3.page.getByText("Your score was updated").count()) === 0);
 
+  // ---- The student's "My scores" tab
+  await A3.page.getByRole("navigation", { name: "Student sections" }).getByRole("link", { name: "My scores" }).click();
+  await A3.page.waitForURL(/\/student\/scores/);
+  const scoresRow = A3.page.locator("li", { hasText: "Essay Quiz" }).first();
+  await scoresRow.waitFor();
+  const scoresText = (await scoresRow.innerText()).replace(/\s+/g, " ");
+  ok("My scores lists the exam with the student's score out of the total", /Essay Quiz.*4\s*\/\s*5.*80%/.test(scoresText), scoresText);
+  ok("...grouped under the subject", (await A3.page.getByText("AUDI314", { exact: true }).count()) >= 1);
+  await A3.page.screenshot({ path: `${SHOTS}/e2e-my-scores.png`, fullPage: true });
+  sql(`update public.exams set show_score = false where title = 'Essay Quiz'`);
+  await A3.page.reload();
+  const hiddenText = (await A3.page.locator("li", { hasText: "Essay Quiz" }).first().innerText()).replace(/\s+/g, " ");
+  ok("When scores are not released the tab shows no number", /Not released/.test(hiddenText) && !/4\s*\/\s*5/.test(hiddenText), hiddenText);
+  sql(`update public.exams set show_score = true where title = 'Essay Quiz'`);
+  await A3.page.goto(`${BASE}/student`);
+
   // The instructor changes it again from the review page.
   await T.page.goto(`${essayUrl}/results`);
   await T.page.getByRole("link", { name: /Aquino, Maria/ }).click();

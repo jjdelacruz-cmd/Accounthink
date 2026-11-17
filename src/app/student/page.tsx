@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { AppShell } from "@/components/AppShell";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ScoreUpdates, type ScoreUpdate } from "@/components/ScoreUpdates";
+import { StudentNav } from "@/components/StudentNav";
 import { Icon } from "@/components/icons";
 import { Badge, Card, EmptyState, Field, PageTitle, SectionTitle } from "@/components/ui";
 import { requireRole } from "@/lib/auth";
@@ -68,6 +69,7 @@ export default async function StudentHome() {
 
   return (
     <AppShell profile={profile}>
+      <StudentNav active="classes" />
       <InstallPrompt />
       <ScoreUpdates updates={scoreUpdates} />
       {announcements.length > 0 && (
